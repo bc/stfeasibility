@@ -20,7 +20,7 @@ f_out = c(28, 0, 0, 0)
 test_that("make feasible task trajectory", {
     # the set of lambdas by which to scale the maximum feasible force for a given
     # task direction.
-    
+
     constr <- constraint_H_with_bounds(H_matrix, f_out, bounds_tuple_of_numeric)
     points <- har_sample(constr, 10000, 100)
     colnames(points) <- muscle_name_per_index
@@ -30,7 +30,17 @@ test_that("make feasible task trajectory", {
 })
 
 test_that("we can generate force trajectory", {
-    lambda_task_time_df(10, 2, cos)
-    trajectory_task <- task_time_df(c(100,0,0,0),20,1,cos, force_dimnames)
+    trajectory_task <- task_time_df(c(100, 0, 0, 0), 20, 1, cos, force_dimnames)
+    expect_equal(nrow(trajectory_task), 20)
+    expect_equal(trajectory_task$Fx[9], -87.947375, tol = 1e-04)
+})
+
+test_that("we can test each task independently", {
+    tasks <- task_time_df(c(28.8, 0, 0, 0), 1000, 1, cos, force_dimnames)
+    list_of_constraints_per_task <- apply(tasks, 1, function(x){
+        constraint_H_with_bounds(H_matrix, x[force_dimnames], bounds_tuple_of_numeric)
+    })
+    bigL <- list_of_constraints_per_task %>% pbmclapply(. %>% har_sample(1e4,thin=100))
+    plot_objects <- lapply(bigL, ggparcoord_har)
     browser()
 })

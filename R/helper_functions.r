@@ -5,6 +5,10 @@ constraint_H_rhs_b <- function(A, b) {
     return(constr)
 }
 
+ggparcoord_har <- function(df){
+	ggparcoord(df, scale="globalminmax", alpha=0.01) + theme_classic()
+}
+
 col_blank <- function(df, FUN) apply(df, 2, FUN)
 colMaxes <- function(df) col_blank(df, max)
 colMins <- function(df) col_blank(df, min)
@@ -14,22 +18,24 @@ untimed_lambdas <- function(length.out, cyclical_function) {
 }
 
 ##' @param cycles_per_second in Hz.
-lambda_task_time_df <- function(n_samples, cycles_per_second, cyclical_function){
-	lambdas <- untimed_lambdas(n_samples, cyclical_function)
-	df <- data.frame(time=seq(0,(n_samples-1)*1/cycles_per_second, by=1/cycles_per_second),
-			lambda = lambdas)
-	return(df)
+lambda_task_time_df <- function(n_samples, cycles_per_second, cyclical_function) {
+    lambdas <- untimed_lambdas(n_samples, cyclical_function)
+    df <- data.frame(time = seq(0, (n_samples - 1) * 1/cycles_per_second, by = 1/cycles_per_second),
+        lambda = lambdas)
+    return(df)
 }
 
-task_time_df <- function(fmax_task, n_samples, cycles_per_second, cyclical_function, muscle_names){
-	time_lambda_df <- lambda_task_time_df(n_samples, cycles_per_second, cyclical_function)
-	df <- apply(time_lambda_df,1, function(row){
-		scaled_task <- row[['lambda']] %*% fmax_task
-		concatenated_row <- c(row[['time']], row[['lambda']], scaled_task) %>% as.data.frame %>% t
-		return(concatenated_row)
-	}) %>% t %>% as.data.frame
-	colnames(df) <- c("time", "lambda", muscle_names)
-	return(df)
+task_time_df <- function(fmax_task, n_samples, cycles_per_second, cyclical_function,
+    muscle_names) {
+    time_lambda_df <- lambda_task_time_df(n_samples, cycles_per_second, cyclical_function)
+    df <- apply(time_lambda_df, 1, function(row) {
+        scaled_task <- row[["lambda"]] %*% fmax_task
+        concatenated_row <- c(row[["time"]], row[["lambda"]], scaled_task) %>% as.data.frame %>%
+            t
+        return(concatenated_row)
+    }) %>% t %>% as.data.frame
+    colnames(df) <- c("time", "lambda", muscle_names)
+    return(df)
 }
 
 constraint_H_with_bounds <- function(A, b, bounds_tuple_of_numeric) {
