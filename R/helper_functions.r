@@ -1,4 +1,4 @@
-##
+#
 constraint_H_rhs_b <- function(A, b) {
     constr <- list(constr = rbind(A, -A), dir = rep("<=", 2 * nrow(A)), rhs = c(b,
         -b))
