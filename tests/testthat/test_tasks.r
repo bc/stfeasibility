@@ -26,5 +26,4 @@ test_that("make feasible task trajectory", {
     # Generate points without delta constraints
     expect_true(all(colMins(points) > 0))
     expect_true(all(colMaxes(points) < 1))
-    browser()
 })
