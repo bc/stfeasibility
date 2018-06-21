@@ -1,10 +1,19 @@
 Package: stfeasibility
-Title: What the Package Does (one line, title case)
-Version: 0.0.0.9000
-Authors@R: person("First", "Last", email = "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
-Depends: R (>= 3.5.0)
+Title: The Feasibility Theory of Time-Varying Isometric Force Trajectories
+Version: 0.0.1
+Authors@R: person("Brian", "Cohn", email = "brian.cohn@usc.edu", role = c("aut", "cre"))
+Description: Selects points that work and removes points that don't work.
+Depends: 
+	R (>= 3.5.0),
+	lpSolve,
+	devtools,
+	ggplot2,
+	hitandrun,
+	ggpubr,
+	reshape2,
+	gganimate
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Suggests: testthat
+RoxygenNote: 6.0.1
