@@ -58,13 +58,40 @@ rm_solutions_with_infeasible_transitions <- function(list_of_dfs, muscle_name_pe
     	return(evaluate_pair_feasibility(list_of_dfs[pair_index:(pair_index+1)], muscle_name_per_index=muscle_name_per_index,threshold=threshold))
     }, mc.cores=mc.cores)
     # })
-    unreachable_per_pair <- lapply(transition_feasibility_df_per_pair, function(feasibility_df){
+    unreachable_points_per_pair <- lapply(transition_feasibility_df_per_pair, function(feasibility_df){
     	map0_map1_feasibility_summaries <- get_map0_and_map1_summaries(feasibility_df)
     	map0_map1_unreachable_points <- lapply(map0_map1_feasibility_summaries, get_maps_with_no_links)
     })
-    browser()
-    return(transition_feasibility_df_per_pair)
+    time_per_polytope <- sapply(list_of_dfs, function(x) x$time[1])
+    unreasonable_points_by_time <- merge_unreasonable_points_by_time(unreachable_points_per_pair=unreachable_points_per_pair, time_value_for_each_polytope=time_per_polytope)
+    list_of_dfs_with_no_unreasonable_points <- lapply(1:length(list_of_dfs), function(time_index){
+    	df_of_interest <- list_of_dfs[[time_index]]
+    	to_destroy <- unreasonable_points_by_time[[time_index]]$to_rm
+    	return(df_of_interest[-to_destroy,])
+    })
+    return(list_of_dfs_with_no_unreasonable_points)
 }
+
+merge_unreasonable_points_by_time <- function(unreachable_points_per_pair, time_value_for_each_polytope){
+    	time_and_unreasonable_points <- lapply(1:length(time_value_for_each_polytope), function(time_index){
+    		#sole points if first or last, else, merge the two.
+    		if(time_index==1){
+    			res <- list(time_value = time_value_for_each_polytope[time_index],
+    				to_rm = as.numeric(unlist(unreachable_points_per_pair[[1]]$map0_unreasonable_points)))
+    			return(res)
+    		} else if (time_index==length(time_value_for_each_polytope)){
+    			res <- list(time_value = time_value_for_each_polytope[time_index],
+    				to_rm = as.numeric(unlist(unreachable_points_per_pair[[length(unreachable_points_per_pair)]]$map1_unreasonable_points)))
+    			return(res)
+    		} else {
+    			forward_direction <- unreachable_points_per_pair[[time_index-1]]$map1
+    			backward_direction <- unreachable_points_per_pair[[time_index]]$map0
+    			res <- list(time_value = time_value_for_each_polytope[time_index], to_rm=as.numeric(unlist(c(forward_direction, backward_direction)))	)
+    			return(res)
+    		}
+    	})
+    	return(time_and_unreasonable_points)
+    }
 
 ##' Dataframe to list of cols
 ##' @description derived from https://stackoverflow.com/questions/3492379/data-frame-rows-to-a-list
@@ -86,12 +113,12 @@ get_maps_with_no_links <- function(feasibility_summary_per_mapX) {
     }
 }
 get_map0_and_map1_summaries <- function(df){
-	map0_summary <- get_mapX_summary(df, "map0")
-	map1_summary <- get_mapX_summary(df, "map1")
-	return(list(map0_summary=map0_summary,map1_summary=map1_summary))
+	map0_summary <- get_unreasonable_points(df, "map0")
+	map1_summary <- get_unreasonable_points(df, "map1")
+	return(list(map0_unreasonable_points=map0_summary, map1_unreasonable_points=map1_summary))
 }
 
-get_mapX_summary <- function(df, map_index_of_interest){
+get_unreasonable_points <- function(df, map_index_of_interest){
 	if (map_index_of_interest=="map0"){
 		num_reachable_colname <- "num_reachable_map1_points"
 	} else{

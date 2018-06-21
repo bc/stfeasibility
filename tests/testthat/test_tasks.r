@@ -28,6 +28,7 @@ test_that("har datasets can be empirically culled under delta constraints", {
     list_of_culled_polytope_dfs <- rm_solutions_with_infeasible_transitions(list_of_polytope_dfs, 
         muscle_name_per_index,
         threshold=0.5, mc.cores=8)
+    browser()
 })
 
 test_that("make feasible task trajectory", {
