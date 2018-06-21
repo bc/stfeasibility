@@ -4,6 +4,8 @@ constraint_H_rhs_b <- function(A, b) {
         -b))
     return(constr)
 }
+   
+unit_cube_zoom <- function() coord_cartesian(xlim = c(0,1), ylim = c(0,1))
 
 set_colnames <- function(df, vector){
 	df_copy <- df
@@ -13,6 +15,21 @@ set_colnames <- function(df, vector){
 
 negative_cos <- function(...) -cos(...)
 force_cos_ramp <- function(...) negative_cos(...)*0.5 + 0.5
+
+generate_task_trajectory_and_har <- function(H_matrix, vector_out, n_task_values, cycles_per_second, cyclical_function, output_dimension_names, muscle_name_per_index, bounds_tuple_of_numeric, num_har_samples, har_thin, ...)
+    {
+        tasks <- task_time_df(fmax_task=vector_out, n_samples=n_task_values, cycles_per_second=cycles_per_second, cyclical_function=cyclical_function, output_dimension_names=output_dimension_names)
+        list_of_constraints_per_task <- apply(tasks, 1, function(x){
+             constraint_H_with_bounds(H_matrix, x[output_dimension_names], bounds_tuple_of_numeric)
+        })
+        bigL <- list_of_constraints_per_task %>% pbmclapply(. %>% har_sample(1e3,thin=100), ...)
+        bigL_labeled <- lapply(1:length(bigL), function(list_index){
+            cbind(tasks[list_index,], bigL[[list_index]], row.names = NULL)
+        })
+        bigL_column_labeled <- lapply(bigL_labeled, set_colnames, c(colnames(tasks), muscle_name_per_index))
+        har_per_task_df <- bigL_column_labeled %>% dcrb
+        return(har_per_task_df)
+    }
 
 
 ggparcoord_har <- function(df){
@@ -74,17 +91,32 @@ add_null_column_to_end_of_lhs <- function(constraint){
 	return(c_copy)
 }
 a_matrix_lhs_direction <- function(A, direction, bounds_tuple_of_numeric){
-	A_block <- constraint_H_rhs_b(cbind(A, direction), rep(0, nrow(A)))
+	A_block <- constraint_H_rhs_b(cbind(A, -direction), rep(0, nrow(A)))
 	bounds_raw <- bound_constraints_for_all_muscles(bounds_tuple_of_numeric)
 	bounds <- add_null_column_to_end_of_lhs(bounds_raw)
 	constraint <- mergeConstraints(A_block, bounds)
 	return(constraint)
 }
 
+merge_diagonal_constraints <- function(constr_A,constr_B){
+	A_dimensions <- nrow(constr_A$constr)
+	B_dimensions <- nrow(constr_B$constr)
+
+}
+
 har_sample <- function(constr, n_samples, thin) {
-    state <- har.init(constr, thin = 100)
+    state <- har.init(constr, thin = thin)
     samples <- har.run(state, n.samples = n_samples)$samples %>% as.data.frame
     return(samples)
+}
+
+pb_har_sample <- function(constr, n_samples, thin, shards=10){
+	samples_per_core <- n_samples/shards
+	samples <- pbmclapply(1:shards, function(i) {
+		har_sample(constr, n_samples=samples_per_core, thin=thin)
+}, mc.cores=6)
+	message('dcrb\'ing')
+	return(dcrb(samples))
 }
 
 
@@ -105,9 +137,9 @@ lpsolve_force_in_dir <- function(min_or_max, direction_constraint, n_muscles){
     lp_result <- lp(min_or_max, objective.in=c_in_cTx, const.mat=direction_constraint$constr,
         const.dir=direction_constraint$dir, const.rhs=direction_constraint$rhs, compute.sens=0)
     dir_of_interest <- direction_constraint$constr[1:4,ncol(direction_constraint$constr)]
-	vector_out <- dir_of_interest * lp_result$objval
+	vector_out <- -1 * dir_of_interest * lp_result$objval
 	vector_magnitude <- sqrt(sum(vector_out^2))
-	output_structure <- list(lambda_scaler = lp_result$objval, muscle_activations = lp_result$solution[1:n_muscles],
+	output_structure <- list(lambda_scaler = -lp_result$objval, muscle_activations = lp_result$solution[1:n_muscles],
         vector_out = vector_out, vector_magnitude = vector_magnitude)
     return(output_structure)
 }
