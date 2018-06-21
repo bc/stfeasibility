@@ -4,8 +4,7 @@ constraint_H_rhs_b <- function(A, b) {
         -b))
     return(constr)
 }
-   
-unit_cube_zoom <- function() coord_cartesian(xlim = c(0,1), ylim = c(0,1))
+   unit_cube_zoom <- function() coord_cartesian(xlim = c(0,1), ylim = c(0,1))
 
 set_colnames <- function(df, vector){
 	df_copy <- df
@@ -45,7 +44,6 @@ evaluate_pair_feasibility <- function(pair_of_dfs, muscle_name_per_index, thresh
     		return(maps_within_threshold_by_dimension(map0,map1, threshold = threshold))
 		})
     map0_map1_indices$feasible_transition <- feasible_values
-    browser()
     return(map0_map1_indices)
 }
 
@@ -53,13 +51,18 @@ rm_solutions_with_infeasible_transitions <- function(list_of_dfs, muscle_name_pe
     threshold, mc.cores) {
     num_pairs <- length(list_of_dfs) - 1
     maps_per_polytope_df <- 1:nrow(list_of_dfs[[1]])
-    transition_feasibility_df_per_pair <- pblapply(1:num_pairs, function(pair_index) {
+    transition_feasibility_df_per_pair <- pbmclapply(1:num_pairs, function(pair_index) {
     	t0 <- list_of_dfs[[pair_index]][1,"time"]
     	t1 <- list_of_dfs[[pair_index+1]][1,"time"]
     	print(paste0("Evaluating transitions for pair from time=(", t0,"---",t1,")"))
     	return(evaluate_pair_feasibility(list_of_dfs[pair_index:(pair_index+1)], muscle_name_per_index=muscle_name_per_index,threshold=threshold))
-    # }, mc.cores=mc.cores)
+    }, mc.cores=mc.cores)
+    # })
+    unreachable_per_pair <- lapply(transition_feasibility_df_per_pair, function(feasibility_df){
+    	map0_map1_feasibility_summaries <- get_map0_and_map1_summaries(feasibility_df)
+    	map0_map1_unreachable_points <- lapply(map0_map1_feasibility_summaries, get_maps_with_no_links)
     })
+    browser()
     return(transition_feasibility_df_per_pair)
 }
 
@@ -70,6 +73,33 @@ rm_solutions_with_infeasible_transitions <- function(list_of_dfs, muscle_name_pe
 df_to_list_of_cols <- function(df) {
   df_list <- setNames(split(df, seq(ncol(df))), colnames(df))
   return(df_list)
+}
+get_maps_with_no_links <- function(feasibility_summary_per_mapX) {
+    names_vector <- colnames(feasibility_summary_per_mapX)
+    if (names_vector[2] %in% c("num_reachable_map0_points", "num_reachable_map1_points")) {
+        df <- data.frame(feasibility_summary_per_mapX[which(feasibility_summary_per_mapX[,
+            2] == 0), 1])
+        colnames(df) <- names_vector[1]
+        return(df)
+    } else {
+        stop("the feasibility_summary_per_mapX must have map0 or map1 as the name of the second col")
+    }
+}
+get_map0_and_map1_summaries <- function(df){
+	map0_summary <- get_mapX_summary(df, "map0")
+	map1_summary <- get_mapX_summary(df, "map1")
+	return(list(map0_summary=map0_summary,map1_summary=map1_summary))
+}
+
+get_mapX_summary <- function(df, map_index_of_interest){
+	if (map_index_of_interest=="map0"){
+		num_reachable_colname <- "num_reachable_map1_points"
+	} else{
+		num_reachable_colname <- "num_reachable_map0_points"
+	}
+	df2 <- ddply(df, map_index_of_interest, summarize, num_reachable=sum(feasible_transition))
+	colnames(df2) <- c(map_index_of_interest, num_reachable_colname)
+	return(df2)
 }
 
 output_subfolder_path <- function(subfolder_name, filename, output_filepath="../../output"){
