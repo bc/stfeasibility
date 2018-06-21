@@ -13,24 +13,106 @@ set_colnames <- function(df, vector){
 	return(df_copy)
 }
 
+##' Ensure a folder exists, write if nonexistent
+##' Derived from https://stackoverflow.com/a/29784923/2438134
+##' @param mainDir main directory path character
+##' @param subDir folder name character
+##' @return it_had_to_be_created logical, lets you know if was just created.
+ensure_folder_exists <- function(mainDir, subDir){
+	ifelse(!dir.exists(file.path(mainDir, subDir)), dir.create(file.path(mainDir, subDir)), FALSE)
+}
+
+maps_within_threshold_by_dimension <- function(map0, map1, threshold) {
+    if (abs(map1[1] - map0[1]) > threshold) {
+        return(FALSE)
+    } else {
+        return(all(abs(map1 - map0) < threshold))
+    }
+}
+
+split_by_time <- function(df){
+	lapply(unique(df$time), function(time_t) df[df$time==time_t,])
+}
+
+
+evaluate_pair_feasibility <- function(pair_of_dfs, muscle_name_per_index, threshold){
+    map0_map1_indices <- expand.grid(1:nrow(pair_of_dfs[[1]]), 1:nrow(pair_of_dfs[[2]]))
+    colnames(map0_map1_indices) <- c("map0", "map1")
+    feasible_values <- pbapply(map0_map1_indices, 1, 
+    	function(index_tuple){
+    		map0 <- pair_of_dfs[[1]][index_tuple[1],muscle_name_per_index]
+    		map1 <- pair_of_dfs[[2]][index_tuple[2],muscle_name_per_index]
+    		return(maps_within_threshold_by_dimension(map0,map1, threshold = threshold))
+		})
+    map0_map1_indices$feasible_transition <- feasible_values
+    browser()
+    return(map0_map1_indices)
+}
+
+rm_solutions_with_infeasible_transitions <- function(list_of_dfs, muscle_name_per_index,
+    threshold, mc.cores) {
+    num_pairs <- length(list_of_dfs) - 1
+    maps_per_polytope_df <- 1:nrow(list_of_dfs[[1]])
+    transition_feasibility_df_per_pair <- pblapply(1:num_pairs, function(pair_index) {
+    	t0 <- list_of_dfs[[pair_index]][1,"time"]
+    	t1 <- list_of_dfs[[pair_index+1]][1,"time"]
+    	print(paste0("Evaluating transitions for pair from time=(", t0,"---",t1,")"))
+    	return(evaluate_pair_feasibility(list_of_dfs[pair_index:(pair_index+1)], muscle_name_per_index=muscle_name_per_index,threshold=threshold))
+    # }, mc.cores=mc.cores)
+    })
+    return(transition_feasibility_df_per_pair)
+}
+
+##' Dataframe to list of cols
+##' @description derived from https://stackoverflow.com/questions/3492379/data-frame-rows-to-a-list
+##' @param df Data frame
+##' @return df_list a list of elements, each of which is a representative col from the original df
+df_to_list_of_cols <- function(df) {
+  df_list <- setNames(split(df, seq(ncol(df))), colnames(df))
+  return(df_list)
+}
+
+output_subfolder_path <- function(subfolder_name, filename, output_filepath="../../output"){
+	tryCatch({
+		ensure_folder_exists(output_filepath, subfolder_name)
+		}, warning = function(w) {
+		    print(w)
+		}, error = function(e) {
+		    stop("Could not ensure the folder exists",e)
+		})
+	output_local_filepath <- paste0(subfolder_name, "/", filename)
+	return(output_filepath(output_local_filepath))
+}
+
+##' Output Filepath
+##' by default takes the starting working directory from the tests/testthat directory.
+##' @param out_path by default ../../output/
+##' @param filename filename of interest
+##' @return output_filepath stringpath
+output_filepath <- function(filename, out_path="../../output") file.path(out_path, filename)
+
 negative_cos <- function(...) -cos(...)
 force_cos_ramp <- function(...) negative_cos(...)*0.5 + 0.5
 
-generate_task_trajectory_and_har <- function(H_matrix, vector_out, n_task_values, cycles_per_second, cyclical_function, output_dimension_names, muscle_name_per_index, bounds_tuple_of_numeric, num_har_samples, har_thin, ...)
-    {
-        tasks <- task_time_df(fmax_task=vector_out, n_samples=n_task_values, cycles_per_second=cycles_per_second, cyclical_function=cyclical_function, output_dimension_names=output_dimension_names)
-        list_of_constraints_per_task <- apply(tasks, 1, function(x){
-             constraint_H_with_bounds(H_matrix, x[output_dimension_names], bounds_tuple_of_numeric)
-        })
-        bigL <- list_of_constraints_per_task %>% pbmclapply(. %>% har_sample(1e3,thin=100), ...)
-        bigL_labeled <- lapply(1:length(bigL), function(list_index){
-            cbind(tasks[list_index,], bigL[[list_index]], row.names = NULL)
-        })
-        bigL_column_labeled <- lapply(bigL_labeled, set_colnames, c(colnames(tasks), muscle_name_per_index))
-        har_per_task_df <- bigL_column_labeled %>% dcrb
-        return(har_per_task_df)
-    }
 
+generate_task_trajectory_and_har <- function(H_matrix, vector_out, n_task_values,
+    cycles_per_second, cyclical_function, output_dimension_names, muscle_name_per_index,
+    bounds_tuple_of_numeric, num_har_samples, har_thin, ...) {
+    tasks <- task_time_df(fmax_task = vector_out, n_samples = n_task_values, cycles_per_second = cycles_per_second,
+        cyclical_function = cyclical_function, output_dimension_names = output_dimension_names)
+    list_of_constraints_per_task <- apply(tasks, 1, function(x) {
+        constraint_H_with_bounds(H_matrix, x[output_dimension_names], bounds_tuple_of_numeric)
+    })
+    bigL <- list_of_constraints_per_task %>% pbmclapply(. %>% har_sample(num_har_samples,
+        thin = har_thin), ...)
+    bigL_labeled <- lapply(1:length(bigL), function(list_index) {
+        cbind(tasks[list_index, ], bigL[[list_index]], row.names = NULL)
+    })
+    bigL_column_labeled <- lapply(bigL_labeled, set_colnames, c(colnames(tasks),
+        muscle_name_per_index))
+    har_per_task_df <- bigL_column_labeled %>% dcrb
+    return(har_per_task_df)
+}
 
 ggparcoord_har <- function(df){
 	ggparcoord(df, scale="globalminmax", alpha=0.01, ...) + theme_classic()
