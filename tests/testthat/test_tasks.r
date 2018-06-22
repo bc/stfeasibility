@@ -99,11 +99,12 @@ test_that("(har vs lpSolve) estimations of fmax in a given dir are expected to b
         # infinite time.
         expect_false(abs(max(res_pos[, 8]) - max_lp_positive$vector_magnitude) <
             0.001)
-        expect_equal(H_matrix %*% max_lp_negative$muscle_activations, structure(c(-17.5927374630042,
-            -4.44089209850063e-16, 3.5527136788005e-15, -6.93889390390723e-18), .Dim = c(4L,
-            1L)))
-        expect_equal(H_matrix %*% max_lp_positive$muscle_activations, structure(c(28.8115546379602,
-            -9.99200722162641e-16, 0, -2.42861286636753e-17), .Dim = c(4L, 1L)))
+        most_negative_mvc_fx <- H_matrix %*% max_lp_negative$muscle_activations
+        most_positive_mvc_fx <- H_matrix %*% max_lp_positive$muscle_activations
+        expect_equal(as.numeric(most_negative_mvc_fx), c(-17.5927374630042,
+            -4.44089209850063e-16, 3.5527136788005e-15, -6.93889390390723e-18))
+        expect_equal(as.numeric(most_positive_mvc_fx), c(28.8115546379602,
+            -9.99200722162641e-16, 0, -2.42861286636753e-17))
         expect_false(abs(max(res_neg[, 8]) - max_lp_negative$vector_magnitude) <
             0.001)
     })
