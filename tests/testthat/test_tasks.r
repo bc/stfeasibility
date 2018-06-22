@@ -15,19 +15,26 @@ test_that("har datasets can be empirically culled under delta constraints", {
     fmax_info <- lpsolve_force_in_dir("max",positive_fx_direction_constraint, 7)
     context("computing polytope samples for tasks")
     har_per_task_df <- generate_task_trajectory_and_har(H_matrix = H_matrix, vector_out = fmax_info$vector_out *
-        (1 - 1e-05), n_task_values = 10, cycles_per_second = 2, cyclical_function = force_cos_ramp,
+        (1 - 1e-05), n_task_values = 5, cycles_per_second = 2, cyclical_function = force_cos_ramp,
         output_dimension_names = force_dimnames, muscle_name_per_index = muscle_name_per_index,
-        bounds_tuple_of_numeric = bounds_tuple_of_numeric, num_har_samples = 100,
+        bounds_tuple_of_numeric = bounds_tuple_of_numeric, num_har_samples = 10,
         har_thin = 100)
     context("splitting by task")
     list_of_polytope_dfs <- split_by_time(har_per_task_df)
-    expect_equal(length(list_of_polytope_dfs),10)
-    expect_equal(nrow(list_of_polytope_dfs[[1]]),100)
-    expect_equal(nrow(list_of_polytope_dfs[[9]]),100)
+    # expect_equal(length(list_of_polytope_dfs),10)
+    # expect_equal(nrow(list_of_polytope_dfs[[1]]),100)
+    # expect_equal(nrow(list_of_polytope_dfs[[9]]),100)
     context("attempting tunneling")
-    list_of_culled_polytope_dfs <- rm_solutions_with_infeasible_transitions(list_of_polytope_dfs, 
-        muscle_name_per_index,
-        threshold=0.5, mc.cores=8)
+    list_of_culled_polytope_dfs <- rm_solutions_with_infeasible_transitions(list_of_polytope_dfs, muscle_name_per_index,threshold=1, mc.cores=1)
+    expect_equal(length(list_of_culled_polytope_dfs), length(list_of_polytope_dfs))
+    threshold_disabled_polytope_dfs <- rm_solutions_with_infeasible_transitions(list_of_polytope_dfs, muscle_name_per_index, threshold=1, mc.cores=1)
+    expect_equal(sapply(threshold_disabled_polytope_dfs,nrow), sapply(list_of_polytope_dfs,nrow))
+    threshold_infinitely_strict <- rm_solutions_with_infeasible_transitions(list_of_polytope_dfs, muscle_name_per_index, threshold=0.0, mc.cores=1)
+    expect_equal(sapply(threshold_infinitely_strict,nrow), rep(0,length(list_of_polytope_dfs)))
+    medium_threshold <- rm_solutions_with_infeasible_transitions(list_of_polytope_dfs, muscle_name_per_index, threshold=0.5, mc.cores=1)
+
+
+    #TODO ANIMATION etc/overlay <- dcrb(list_of_culled_polytope_dfs)
 })
 
 test_that("make feasible task trajectory", {
