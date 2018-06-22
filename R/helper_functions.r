@@ -241,9 +241,9 @@ where_muscles_have_unreasonable_values <- function(df, muscle_names) {
     })
 }
 
-constraint_H_with_bounds <- function(A, b, bounds_tuple_of_numeric, muscle_names) {
+constraint_H_with_bounds <- function(A, b, bounds_tuple_of_numeric) {
     H_constraint <- constraint_H_rhs_b(A, b)
-    bounds <- bound_constraints_for_all_muscles(bounds_tuple_of_numeric, muscle_names)
+    bounds <- bound_constraints_for_all_muscles(bounds_tuple_of_numeric, muscle_names=colnames(A))
     return(mergeConstraints(H_constraint, bounds))
 }
 
@@ -259,18 +259,25 @@ add_null_column_to_end_of_lhs <- function(constraint) {
     return(c_copy)
 }
 
+stop_if_dimensionality_names_are_missing <- function(df){
+    if (is.null(rownames(df)) | is.null(colnames(df)))
+    {
+        stop("A matrix passed to a_matrix_lhs_direction must have colnames and rownames for the dimensions of input and output")
+    }
+}
+
 ##' @param A equality constraints—must have named columns and rows for input and output dimensions
 ##' @param direction the direction to generate constraints on. Must have an attr(direction, "output_dimension_names") with a string name for each dimension. same len as direction
-a_matrix_lhs_direction <- function(A, direction, bounds_tuple_of_numeric) {
-    muscle_names <- colnames(A)
-    output_dimension_names <- rownames(A)
-    A_block <- constraint_H_rhs_b(cbind(A, -direction), rep(0, nrow(A)))
-    bounds_raw <- bound_constraints_for_all_muscles(bounds_tuple_of_numeric,muscle_names)
+a_matrix_lhs_direction <- function(H_matrix, direction, bounds_tuple_of_numeric) {
+    stop_if_dimensionality_names_are_missing(H_matrix)
+    muscle_names <- colnames(H_matrix)
+    output_dimension_names <- rownames(H_matrix)
+    A_block <- constraint_H_rhs_b(cbind(H_matrix, -direction), rep(0, nrow(H_matrix)))
+    bounds_raw <- bound_constraints_for_all_muscles(bounds_tuple_of_numeric, muscle_names)
     bounds <- add_null_column_to_end_of_lhs(bounds_raw)
     constraint <- mergeConstraints(A_block, bounds)
     constraint$constr_dimnames <- c(muscle_names, "task_lambda")
     constraint$rhs_dimnames <- c(output_dimension_names, output_dimension_names %>% negative_string)
-    browser()
     return(constraint)
 }
 ##' @see a_matrix_lhs_direction
