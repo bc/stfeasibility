@@ -11,7 +11,8 @@ Depends:
 	hitandrun,
 	ggpubr,
 	reshape2,
-	gganimate
+	gganimate,
+	plyr
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
