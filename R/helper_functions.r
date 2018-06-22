@@ -47,7 +47,6 @@ evaluate_pair_feasibility <- function(pair_of_dfs, muscle_name_per_index, thresh
     return(map0_map1_indices)
 }
 
-
 ##' @return transition_feasibility_df_per_pair a list of df, each a 'data.frame': N obs. of  3 variables:
 ##' $ map0               : int 
 ##' $ map1               : int 
@@ -64,6 +63,17 @@ get_transition_feasibility_per_pair <- function(list_of_dfs, muscle_name_per_ind
    	 }, ...)
     }
 
+
+
+pass_df_if_index_vector_is_empty_else_rm_rows <- function(df, vector_of_row_indices_to_rm){
+	if(length(vector_of_row_indices_to_rm)==0){
+		return(df)
+	} else {
+		return(df[-vector_of_row_indices_to_rm,])
+	}
+}
+
+
 rm_solutions_with_infeasible_transitions <- function(list_of_dfs, muscle_name_per_index,
     threshold, ...) {
     
@@ -77,9 +87,8 @@ rm_solutions_with_infeasible_transitions <- function(list_of_dfs, muscle_name_pe
     list_of_dfs_with_no_unreasonable_points <- lapply(1:length(list_of_dfs), function(time_index){
     	df_of_interest <- list_of_dfs[[time_index]]
     	to_destroy <- unreasonable_points_by_time[[time_index]]$to_rm
-    	cond <- threshold==0.5
-	    browser(expr=cond)
-    	return(df_of_interest[-to_destroy,])
+	    df_result <- df_of_interest %>% pass_df_if_index_vector_is_empty_else_rm_rows(to_destroy)
+    	return(df_result)
     })
     return(list_of_dfs_with_no_unreasonable_points)
 }

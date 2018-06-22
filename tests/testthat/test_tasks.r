@@ -1,6 +1,5 @@
 context("generate_feasible patterns")
 # Test finger in flexed posture, from frontiers2018 feasibility theory paper
-set.seed(1)
 JR <- rbind(c(-0.08941, -0.0447, -0.009249, 0.03669, 0.1421, 0.2087, -0.2138), c(-0.04689,
     -0.1496, 0.052, 0.052, 0.0248, 0, 0.0248), c(0.06472, 0.001953, -0.1518, -0.1518,
     0.2919, 0.0568, 0.2067), c(0.003081, -0.002352, -0.0001649, -0.0001649, -0.0004483,
@@ -26,16 +25,13 @@ test_that("har datasets can be empirically culled under delta constraints", {
     # expect_equal(nrow(list_of_polytope_dfs[[1]]),100)
     # expect_equal(nrow(list_of_polytope_dfs[[9]]),100)
     context("attempting tunneling")
-    list_of_culled_polytope_dfs <- rm_solutions_with_infeasible_transitions(list_of_polytope_dfs, muscle_name_per_index,threshold=1, mc.cores=8)
-
-
+    list_of_culled_polytope_dfs <- rm_solutions_with_infeasible_transitions(list_of_polytope_dfs, muscle_name_per_index,threshold=1, mc.cores=1)
     expect_equal(length(list_of_culled_polytope_dfs), length(list_of_polytope_dfs))
-    threshold_disabled_polytope_dfs <- rm_solutions_with_infeasible_transitions(list_of_polytope_dfs, muscle_name_per_index, threshold=1, mc.cores=8)
+    threshold_disabled_polytope_dfs <- rm_solutions_with_infeasible_transitions(list_of_polytope_dfs, muscle_name_per_index, threshold=1, mc.cores=1)
     expect_equal(sapply(threshold_disabled_polytope_dfs,nrow), sapply(list_of_polytope_dfs,nrow))
-    threshold_infinitely_strict <- rm_solutions_with_infeasible_transitions(list_of_polytope_dfs, muscle_name_per_index, threshold=0.0, mc.cores=8)
+    threshold_infinitely_strict <- rm_solutions_with_infeasible_transitions(list_of_polytope_dfs, muscle_name_per_index, threshold=0.0, mc.cores=1)
     expect_equal(sapply(threshold_infinitely_strict,nrow), rep(0,length(list_of_polytope_dfs)))
-    medium_threshold <- rm_solutions_with_infeasible_transitions(list_of_polytope_dfs, muscle_name_per_index, threshold=0.5, mc.cores=8)
-    expect_equal(sapply(medium_threshold,nrow), rep(0,length(list_of_polytope_dfs)))
+    medium_threshold <- rm_solutions_with_infeasible_transitions(list_of_polytope_dfs, muscle_name_per_index, threshold=0.5, mc.cores=1)
 
 
     #TODO ANIMATION etc/overlay <- dcrb(list_of_culled_polytope_dfs)
