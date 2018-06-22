@@ -37,7 +37,7 @@ split_by_time <- function(df){
 evaluate_pair_feasibility <- function(pair_of_dfs, muscle_name_per_index, threshold){
     map0_map1_indices <- expand.grid(1:nrow(pair_of_dfs[[1]]), 1:nrow(pair_of_dfs[[2]]))
     colnames(map0_map1_indices) <- c("map0", "map1")
-    feasible_values <- pbapply(map0_map1_indices, 1, 
+    feasible_values <- apply(map0_map1_indices, 1, 
     	function(index_tuple){
     		map0 <- pair_of_dfs[[1]][index_tuple[1],muscle_name_per_index]
     		map1 <- pair_of_dfs[[2]][index_tuple[2],muscle_name_per_index]
@@ -47,17 +47,27 @@ evaluate_pair_feasibility <- function(pair_of_dfs, muscle_name_per_index, thresh
     return(map0_map1_indices)
 }
 
-rm_solutions_with_infeasible_transitions <- function(list_of_dfs, muscle_name_per_index,
-    threshold, mc.cores) {
-    num_pairs <- length(list_of_dfs) - 1
+
+##' @return transition_feasibility_df_per_pair a list of df, each a 'data.frame': N obs. of  3 variables:
+##' $ map0               : int 
+##' $ map1               : int 
+##' $ feasible_transition: logi
+##' where N is the number of hit and run samples. length of the list is equal to length(list_of_dfs)-1.
+get_transition_feasibility_per_pair <- function(list_of_dfs, muscle_name_per_index, threshold, ...){
+	num_pairs <- length(list_of_dfs) - 1
     maps_per_polytope_df <- 1:nrow(list_of_dfs[[1]])
     transition_feasibility_df_per_pair <- pbmclapply(1:num_pairs, function(pair_index) {
     	t0 <- list_of_dfs[[pair_index]][1,"time"]
     	t1 <- list_of_dfs[[pair_index+1]][1,"time"]
     	print(paste0("Evaluating transitions for pair from time=(", t0,"---",t1,")"))
     	return(evaluate_pair_feasibility(list_of_dfs[pair_index:(pair_index+1)], muscle_name_per_index=muscle_name_per_index,threshold=threshold))
-    }, mc.cores=mc.cores)
-    # })
+   	 }, ...)
+    }
+
+rm_solutions_with_infeasible_transitions <- function(list_of_dfs, muscle_name_per_index,
+    threshold, ...) {
+    
+    transition_feasibility_df_per_pair <- get_transition_feasibility_per_pair(list_of_dfs=list_of_dfs, muscle_name_per_index=muscle_name_per_index, threshold=threshold, ...)
     unreachable_points_per_pair <- lapply(transition_feasibility_df_per_pair, function(feasibility_df){
     	map0_map1_feasibility_summaries <- get_map0_and_map1_summaries(feasibility_df)
     	map0_map1_unreachable_points <- lapply(map0_map1_feasibility_summaries, get_maps_with_no_links)
@@ -67,6 +77,8 @@ rm_solutions_with_infeasible_transitions <- function(list_of_dfs, muscle_name_pe
     list_of_dfs_with_no_unreasonable_points <- lapply(1:length(list_of_dfs), function(time_index){
     	df_of_interest <- list_of_dfs[[time_index]]
     	to_destroy <- unreasonable_points_by_time[[time_index]]$to_rm
+    	cond <- threshold==0.5
+	    browser(expr=cond)
     	return(df_of_interest[-to_destroy,])
     })
     return(list_of_dfs_with_no_unreasonable_points)
