@@ -4,7 +4,7 @@ la <- load_all
 te <- test
 atp <- auto_test_package
 
-run_full_long_tests <- TRUE
+run_full_long_tests <- FALSE
 
 # Sample Data for use in testing:
 # Test finger in flexed posture, from frontiers2018 feasibility theory paper
