@@ -1,5 +1,8 @@
 language: r
 cache: packages
+r_packages:
+     - devtools
+     - covr
 warnings_are_errors: false
 sudo: false 
 git:
@@ -15,8 +18,6 @@ env:
     # - RVERSION=3.5.0
 notifications:
      slack: kaspectscientists:OFGveqm4qxt26CPytZrHUxSV
-# r_packages:
- #     - covr
 #r_github_packages:
   #- jimhester/lintr
 after_success:
