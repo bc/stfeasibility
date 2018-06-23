@@ -81,8 +81,9 @@ test_that("we can generate and har upon each task polytope independently", {
    })
 test_that("spatiotemporal tunnel har is computationally tractable", {
 	r <- st_task_and_constraint[[1]]
+	r_non_redundant <- eliminateRedundant(r)
     	mbm <- microbenchmark(
-		"60 tasks, 1e1 point" = {a <- r %>% har_sample(1e1); print("1/5" %>% paste(Sys.time()))},
+		"60 tasks, 1e2 point pre_eliminated" = {a <- r_non_redundant %>% har_sample(1e2); print("1/5" %>% paste(Sys.time()))},
 		"60 tasks, 1e2 points" = {b <- r %>% har_sample(1e2); print("2/5" %>% paste(Sys.time()))},
 		times=1
 	)

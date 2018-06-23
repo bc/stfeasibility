@@ -1,9 +1,16 @@
 language: r
-cache: packages
+# cache: packages
+cache:
+  directories:
+    - $TRAVIS_BUILD_DIR/packrat/src
+    - $TRAVIS_BUILD_DIR/packrat/lib
+  packages: true
 r_packages:
      - devtools
      - covr
 warnings_are_errors: false
+install:
+  - R -e "0" --args --bootstrap-packrat
 sudo: false 
 git:
   depth: 1
