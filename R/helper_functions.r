@@ -182,25 +182,32 @@ output_filepath <- function(filename, out_path = "../../output") file.path(out_p
 negative_cos <- function(...) -cos(...)
 force_cos_ramp <- function(...) negative_cos(...) * 0.5 + 0.5
 
+generate_tasks_and_corresponding_constraints <- function(vector_out, n_task_values, cycles_per_second, cyclical_function, output_dimension_names, bounds_tuple_of_numeric){
+        tasks <- task_time_df(fmax_task = vector_out, n_samples = n_task_values, cycles_per_second = cycles_per_second,
+            cyclical_function = cyclical_function, output_dimension_names = output_dimension_names)
+        list_of_constraints_per_task <- apply(tasks, 1, function(x) {
+           constraint_H_with_bounds(H_matrix, x[output_dimension_names], bounds_tuple_of_numeric)
+        })
+    return(list(tasks=tasks, constraints = list_of_constraints_per_task))
+}
 
 generate_task_trajectory_and_har <- function(H_matrix, vector_out, n_task_values,
     cycles_per_second, cyclical_function, output_dimension_names, muscle_name_per_index,
     bounds_tuple_of_numeric, num_har_samples, har_thin, ...) {
-    tasks <- task_time_df(fmax_task = vector_out, n_samples = n_task_values, cycles_per_second = cycles_per_second,
-        cyclical_function = cyclical_function, output_dimension_names = output_dimension_names)
-    list_of_constraints_per_task <- apply(tasks, 1, function(x) {
-        constraint_H_with_bounds(H_matrix, x[output_dimension_names], bounds_tuple_of_numeric)
-    })
-    bigL <- list_of_constraints_per_task %>% pbmclapply(. %>% har_sample(num_har_samples,
+    tasks_and_constraints <- generate_tasks_and_corresponding_constraints(vector_out,
+        n_task_values, cycles_per_second, cyclical_function, output_dimension_names,
+        bounds_tuple_of_numeric)
+    bigL <- tasks_and_constraints$constraints %>% pbmclapply(. %>% har_sample(num_har_samples,
         thin = har_thin), ...)
     bigL_labeled <- lapply(1:length(bigL), function(list_index) {
-        cbind(tasks[list_index, ], bigL[[list_index]], row.names = NULL)
+        cbind(tasks_and_constraints$tasks[list_index, ], bigL[[list_index]], row.names = NULL)
     })
-    bigL_column_labeled <- lapply(bigL_labeled, set_colnames, c(colnames(tasks),
+    bigL_column_labeled <- lapply(bigL_labeled, set_colnames, c(colnames(tasks_and_constraints$tasks),
         muscle_name_per_index))
     har_per_task_df <- bigL_column_labeled %>% dcrb
     return(har_per_task_df)
 }
+
 
 ggparcoord_har <- function(df) {
     ggparcoord(df, scale = "globalminmax", alpha = 0.01, ...) + theme_classic()
