@@ -79,12 +79,21 @@ test_that("we can generate and har upon each task polytope independently", {
     st_task_and_constraint <- list(st_constr = st_constr, tasks_and_independent_constraints = tasks_and_constraints)
     devtools::use_data(st_task_and_constraint, overwrite = TRUE)
    })
+skip("takes too long")
+test_that("eliminate redundancy",{
+	r_non_redundant <- eliminateRedundant(st_task_and_constraint[[1]])
+	devtools::use_data(r_non_redundant, overwrite = TRUE)
+})
 test_that("spatiotemporal tunnel har is computationally tractable", {
-	r <- st_task_and_constraint[[1]]
-	r_non_redundant <- eliminateRedundant(r)
     	mbm <- microbenchmark(
-		"60 tasks, 1e2 point pre_eliminated" = {a <- r_non_redundant %>% har_sample(1e2); print("1/5" %>% paste(Sys.time()))},
-		"60 tasks, 1e2 points" = {b <- r %>% har_sample(1e2); print("2/5" %>% paste(Sys.time()))},
+		"6 tasks, 1e2 point pre_eliminated" = {a <- r_non_redundant %>% har_sample(1e2); print("1/5" %>% paste(Sys.time()))},
+		"6 tasks, 1e2 point pre_eliminated_override" = {a <- r_non_redundant %>% har_sample(1e2, eliminate=FALSE); print("1/5" %>% paste(Sys.time()))},
+		"6 tasks, 1e3 point pre_eliminated" = {a <- r_non_redundant %>% har_sample(1e3); print("1/5" %>% paste(Sys.time()))},
+		"6 tasks, 1e3 point pre_eliminated_override" = {a <- r_non_redundant %>% har_sample(1e3, eliminate=FALSE); print("1/5" %>% paste(Sys.time()))},
+		"6 tasks, 1e4 point pre_eliminated" = {a <- r_non_redundant %>% har_sample(1e4); print("1/5" %>% paste(Sys.time()))},
+		"6 tasks, 1e4 point pre_eliminated_override" = {a <- r_non_redundant %>% har_sample(1e4, eliminate=FALSE); print("1/5" %>% paste(Sys.time()))},
+		"6 tasks, 1e5 point pre_eliminated" = {a <- r_non_redundant %>% har_sample(1e5); print("1/5" %>% paste(Sys.time()))},
+		"6 tasks, 1e5 point pre_eliminated_override" = {a <- r_non_redundant %>% har_sample(1e5, eliminate=FALSE); print("1/5" %>% paste(Sys.time()))},
 		times=1
 	)
 })
