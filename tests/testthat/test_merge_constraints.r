@@ -59,10 +59,3 @@ test_that("velocity_constraint works on multiconstraint", {
 		indices_for_muscles = muscle_and_lambda_indices(multiconstraint, 7)$indices_for_muscles,
 		num_muscles=7 )
 })
-	
-
-	
-	library(ggplot2)
-	autoplot(mbm)
-
-})
