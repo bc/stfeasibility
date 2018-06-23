@@ -246,22 +246,6 @@ where_muscles_have_unreasonable_values <- function(df, muscle_names) {
     })
 }
 
-diagonal_merge_constraints <- function(first_constraint, second_constraint, string_to_append_to_second_constraint){
-    first_constraint_copy <- first_constraint
-    second_constraint_copy <- second_constraint
-
-    padding_for_constraint1 <- zeros_df(nrow(first_constraint$constr), ncol(second_constraint$constr))
-    appended_second_constraint_colnames <- paste(colnames(second_constraint$constr),string_to_append_to_second_constraint, sep="_")
-    dimnames(padding_for_constraint1) <- list(rownames(first_constraint$constr),appended_second_constraint_colnames)
-    first_constraint_copy$constr <- cbind(first_constraint$constr, padding_for_constraint1)
-
-    padding_for_constraint2 <- zeros_df(nrow(second_constraint$constr), ncol(second_constraint$constr))
-    dimnames(padding_for_constraint2) <- list(rownames(second_constraint$constr),colnames(first_constraint$constr))
-    second_constraint_copy$constr <- cbind(padding_for_constraint2, second_constraint$constr)
-    rownames(second_constraint_copy$constr) <- paste(rownames(second_constraint$constr),string_to_append_to_second_constraint, sep="_")
-    merged_constraint <- merge_constraints(first_constraint_copy, second_constraint_copy)
-    return(merged_constraint)
-}
 
 
 
@@ -353,17 +337,57 @@ dcclapply <- function(...){
     dcc(lapply(...) )
 }
 
+split_into_pieces <- function(vector, slice_size){
+    if (length(vector) %% slice_size != 0) {
+        stop("input was not cleanly split into the desired slice size")
+    }
+    split(vector, seq_along(vector)/slice_size)
+}
+
+##' @see lpsolve_force_in_dir
+get_num_muscles_via_indices_for_muscles<- function(indices_for_muscles){
+    muscles_are_true <- 1:max(indices_for_muscles) %in% indices_for_muscles
+    if (all(muscles_are_true)){
+        return(length(indices_for_muscles))
+    }else {
+        return(which(!(muscles_are_true))[1]-1)    
+    }
+    
+}
 # to get the opposite direction, change the sign of the direction.
-lpsolve_force_in_dir <- function(min_or_max, direction_constraint, n_muscles) {
+lpsolve_force_in_dir <- function(min_or_max, direction_constraint, indices_for_muscles) {
     # show interest in maximizing the lambda scaler parameter only.
-    c_in_cTx <- c(rep(0, n_muscles), 1)
+    num_muscles <- get_num_muscles_via_indices_for_muscles(indices_for_muscles)
+    indices_to_control <- rep(1, ncol(direction_constraint$constr))
+    # only optimizing over the output force
+    indices_to_control[indices_for_muscles] <- 0
+    c_in_cTx <- indices_to_control
+    num_tasks <- sum(c_in_cTx)
     lp_result <- lp(min_or_max, objective.in = c_in_cTx, const.mat = direction_constraint$constr,
         const.dir = direction_constraint$dir, const.rhs = direction_constraint$rhs,
         compute.sens = 0)
-    dir_of_interest <- direction_constraint$constr[1:4, ncol(direction_constraint$constr)]
-    vector_out <- -1 * dir_of_interest * lp_result$objval
-    vector_magnitude <- sqrt(sum(vector_out^2))
-    output_structure <- list(lambda_scaler = -lp_result$objval, muscle_activations = lp_result$solution[1:n_muscles],
-        vector_out = vector_out, vector_magnitude = vector_magnitude)
+    output_wrench_dimensionality <- 4
+    lambda_constraint_columns <- direction_constraint$constr[, which(indices_to_control ==
+        1)] %>% as.data.frame
+
+    lambda_start_indices <- head(which(0:nrow(lambda_constraint_columns)%%22 == 0),
+        sum(indices_to_control))
+    lambda_indices <- sapply(lambda_start_indices, function(x) return(x:(x + (output_wrench_dimensionality -
+        1))))
+    task_directions_of_interest <- lapply(1:ncol(lambda_indices), function(i) {
+        # multiplied by -1 because we need to move the output direction back to the rhs
+        -lambda_constraint_columns[lambda_indices[, i], i]
+    })
+    lambda_values <- lp_result$solution[c_in_cTx == 1]
+    output_vector_per_task <- lapply(1:num_tasks, function(i) {
+        task_directions_of_interest[[i]] * lambda_values[i]
+    })
+    vector_magnitude_per_task <- lapply(output_vector_per_task, function(vector_out) sqrt(sum(vector_out^2)))
+    muscle_activation_pattern_per_task <- t(matrix(lp_result$solution, nrow = num_muscles +
+        1)[1:(num_muscles), ]) %>% df_to_list_of_rows
+    output_structure <- list(total_cost = lp_result$objval, direction_per_task = task_directions_of_interest,
+        muscle_activation_pattern_per_task = muscle_activation_pattern_per_task,
+        lambda_values = lambda_values, output_vector_per_task = output_vector_per_task,
+        vector_magnitude_per_task = vector_magnitude_per_task)
     return(output_structure)
 }

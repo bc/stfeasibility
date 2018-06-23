@@ -3,9 +3,10 @@ context("generate_feasible patterns")
 test_that("har datasets can be empirically culled under delta constraints", {
     positive_fx_direction_constraint <- a_matrix_lhs_direction(H_matrix, direction = c(1,
         0, 0, 0), bounds_tuple_of_numeric)
-    fmax_info <- lpsolve_force_in_dir("max", positive_fx_direction_constraint, 7)
+    indices_for_muscles <- 1:7
+    fmax_info <- lpsolve_force_in_dir("max", positive_fx_direction_constraint, indices_for_muscles)
     context("computing polytope samples for tasks")
-    har_per_task_df <- generate_task_trajectory_and_har(H_matrix = H_matrix, vector_out = fmax_info$vector_out *
+    har_per_task_df <- generate_task_trajectory_and_har(H_matrix = H_matrix, vector_out = fmax_info$output_vector_per_task[[1]] *
         (1 - 1e-05), n_task_values = 5, cycles_per_second = 2, cyclical_function = force_cos_ramp,
         output_dimension_names = force_dimnames, muscle_name_per_index = muscle_name_per_index,
         bounds_tuple_of_numeric = bounds_tuple_of_numeric, num_har_samples = 10,
@@ -90,10 +91,11 @@ test_that("(har vs lpSolve) estimations of fmax in a given dir are expected to b
 
         expect_equal(colMaxes(res_pos[, 1:7]), colMaxes(res_neg[1:7]), tol = 0.01)
         expect_equal(colMins(res_pos[, 1:7]), colMins(res_neg[, 1:7]), tol = 0.01)
+        indices_for_muscles <- 1:7
         max_lp_negative <- lpsolve_force_in_dir("max", negative_fx_direction_constraint,
-            7)
+            indices_for_muscles)
         max_lp_positive <- lpsolve_force_in_dir("max", positive_fx_direction_constraint,
-            7)
+            indices_for_muscles)
 
         # Hit and run does not get all the way to the vertex/edge unless you give it
         # infinite time.
@@ -116,7 +118,8 @@ test_that("output_folder paths work", {
 test_that("we can generate and har upon each task polytope independently", {
     positive_fx_direction_constraint <- a_matrix_lhs_direction(H_matrix, direction = c(1,
         0, 0, 0), bounds_tuple_of_numeric)
-    fmax_info <- lpsolve_force_in_dir("max", positive_fx_direction_constraint, 7)
+    indices_for_muscles <- 1:7
+    fmax_info <- lpsolve_force_in_dir("max", positive_fx_direction_constraint, indices_for_muscles)
     har_per_task_df <- generate_task_trajectory_and_har(H_matrix = H_matrix, vector_out = fmax_info$vector_out *
         (1 - 1e-05), n_task_values = 60, cycles_per_second = 2, cyclical_function = force_cos_ramp,
         output_dimension_names = force_dimnames, muscle_name_per_index = muscle_name_per_index,
