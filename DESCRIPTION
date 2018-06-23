@@ -12,7 +12,8 @@ Depends:
 	ggpubr,
 	reshape2,
 	gganimate,
-	plyr
+	plyr,
+	RColorBrewer
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

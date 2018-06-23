@@ -257,7 +257,6 @@ diagonal_merge_constraints <- function(first_constraint, second_constraint, stri
     second_constraint_copy$constr <- cbind(padding_for_constraint2, second_constraint$constr)
     rownames(second_constraint_copy$constr) <- paste(rownames(second_constraint$constr),string_to_append_to_second_constraint, sep="_")
     merged_constraint <- merge_constraints(first_constraint_copy, second_constraint_copy)
-    browser()
     return(merged_constraint)
 }
 
