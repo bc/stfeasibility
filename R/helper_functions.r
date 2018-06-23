@@ -186,7 +186,8 @@ generate_tasks_and_corresponding_constraints <- function(H_matrix, vector_out, n
         tasks <- task_time_df(fmax_task = vector_out, n_samples = n_task_values, cycles_per_second = cycles_per_second,
             cyclical_function = cyclical_function, output_dimension_names = output_dimension_names)
         list_of_constraints_per_task <- apply(tasks, 1, function(x) {
-            a_matrix_lhs_direction(H_matrix, direction, x, bounds_tuple_of_numeric)
+            # browser()
+            a_matrix_lhs_direction(H_matrix, x[output_dimension_names], bounds_tuple_of_numeric)
            # constraint_H_with_bounds(H_matrix, x[output_dimension_names], bounds_tuple_of_numeric)
         })
     return(list(tasks=tasks, constraints = list_of_constraints_per_task))

@@ -75,14 +75,17 @@ set_dimnames <- function(input_df_or_mat, colnames_to_use, rownames_to_use) {
 generate_and_add_velocity_constraint <- function(constraint_object, max_allowable_increasing_tension_speed, max_allowable_decreasing_tension_speed, indices_for_muscles, num_muscles){
 	velocity_constraint <- generate_full_velocity_constraint(constraint_object, max_allowable_increasing_tension_speed, max_allowable_decreasing_tension_speed, indices_for_muscles, num_muscles)
 	constraint_with_velocity_requirements <- merge_constraints(constraint_object, velocity_constraint)
+	expect_equal(sum(nrow(constraint_object$constr),nrow(velocity_constraint$constr)),nrow(constraint_with_velocity_requirements$constr))
 	return(constraint_with_velocity_requirements)
 }
 
 generate_full_velocity_constraint <- function(constraint_object, max_allowable_increasing_tension_speed, max_allowable_decreasing_tension_speed, indices_for_muscles, num_muscles){
-	num_muscles
 	num_tasks <- sum(indices_to_control(constraint_object, indices_for_muscles))
 	num_pairs <- num_tasks - 1
 	velocity_constraint <- generate_velocity_constraint_matrix(constraint_object, indices_for_muscles, num_tasks, num_pairs, num_muscles)
+	image(velocity_constraint%>%rotate)
+	expect_equal(ncol(velocity_constraint), num_tasks*(num_muscles + 1))
+	expect_equal(nrow(velocity_constraint), num_pairs*num_muscles*2)
 	max_inc_speed <- rep(max_allowable_increasing_tension_speed, num_muscles)
 	max_dec_speed <- rep(max_allowable_decreasing_tension_speed, num_muscles)
 	rhs_velocity <- rep(c(max_inc_speed, max_dec_speed),num_pairs)
@@ -98,7 +101,7 @@ generate_velocity_constraint_matrix <- function(constraint_object, indices_for_m
 	    velocity_constraint <- compose_velocity_constraint_per_transition(transition_blocks,
 	        cols_per_task, num_muscles) %>% combine_velocity_constraints
 	    expect_equal(num_pairs*num_muscles*2, nrow(velocity_constraint))
-	    set_dimnames(velocity_constraint, colnames(constraint_object$constr),
+	    velocity_constraint <- set_dimnames(velocity_constraint, colnames(constraint_object$constr),
 	        constraint_rownames)
     	return(velocity_constraint)
 	}

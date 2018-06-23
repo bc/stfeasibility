@@ -67,25 +67,23 @@ test_that("we can generate and har upon each task polytope independently", {
         0, 0, 0), bounds_tuple_of_numeric)
     indices_for_muscles <- 1:7
     fmax_info <- lpsolve_force_in_dir("max", positive_fx_direction_constraint, indices_for_muscles)
-    tasks_and_constraints <- generate_tasks_and_corresponding_constraints(vector_out = fmax_info$output_vector_per_task[[1]] *
-        (1 - 1e-05), n_task_values = 60, cycles_per_second = 2, cyclical_function = force_cos_ramp,
+    tasks_and_constraints <- generate_tasks_and_corresponding_constraints(H_matrix=H_matrix, vector_out = fmax_info$output_vector_per_task[[1]] *
+        (1 - 1e-05), n_task_values = 6, cycles_per_second = 2, cyclical_function = force_cos_ramp,
         output_dimension_names = force_dimnames,
-        bounds_tuple_of_numeric)
+        bounds_tuple_of_numeric=bounds_tuple_of_numeric)
 
 	inequality_constraints <- diagonal_merge_constraint_list(tasks_and_constraints$constraint)
-	browser()
 	st_constr <- generate_and_add_velocity_constraint(inequality_constraints, 0.042, 0.040, muscle_and_lambda_indices(inequality_constraints, 7)$indices_for_muscles, 7)
-    plot_constraint_matrix(st_constr)
-    devtools::use_data(st_task_and_constraint)
+    a <- plot_constraint_matrix(st_constr)
+    ggplotly(a)
+    st_task_and_constraint <- list(st_constr = st_constr, tasks_and_independent_constraints = tasks_and_constraints)
+    devtools::use_data(st_task_and_constraint, overwrite = TRUE)
    })
 test_that("spatiotemporal tunnel har is computationally tractable", {
-	r <- st_task_and_constraint$constraint
+	r <- st_task_and_constraint[[1]]
     	mbm <- microbenchmark(
-		"60 tasks, 1 point" = {a <- diagonal_merge_constraint_list(r) %>% har_sample(1e1); print("1/5" %>% paste(Sys.time()))},
-		"60 tasks, 1e2 points" = {b <- diagonal_merge_constraint_list(r) %>% har_sample(1e2); print("2/5" %>% paste(Sys.time()))},
-		# "60 tasks, 1e3 points" = {c <- diagonal_merge_constraint_list(r) %>% har_sample(1e3); print("3/5" %>% paste(Sys.time()))},
-		# "60 tasks, 1e4 points" 	= {d <- diagonal_merge_constraint_list(r) %>% har_sample(1e4); print("4/5" %>% paste(Sys.time()))},
-		# "60 tasks, 1e5 points" 	= {e <- diagonal_merge_constraint_list(r) %>% har_sample(1e5); print("5/5" %>% paste(Sys.time()))},
+		"60 tasks, 1e1 point" = {a <- r %>% har_sample(1e1); print("1/5" %>% paste(Sys.time()))},
+		"60 tasks, 1e2 points" = {b <- r %>% har_sample(1e2); print("2/5" %>% paste(Sys.time()))},
 		times=1
 	)
 })
