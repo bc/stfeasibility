@@ -14,8 +14,10 @@ diagonal_merge_constraints <- function(first_constraint, second_constraint, stri
     second_constraint_copy$constr <- cbind(padding_for_constraint2, second_constraint$constr)
     rownames(second_constraint_copy$constr) <- paste(rownames(second_constraint$constr),string_to_append_to_second_constraint, sep="_")
     merged_constraint <- merge_constraints(first_constraint_copy, second_constraint_copy)
+    browser()
     return(merged_constraint)
 }
+
 
 ##' @return constr combined constraint.
 diagonal_merge_constraint_list <- function(list_of_constraints){
@@ -30,7 +32,9 @@ diagonal_merge_constraint_list <- function(list_of_constraints){
 	for (pair_i in seq(2,list_len-1)) {
 		var_result <- diagonal_merge_constraints(var_result, list_of_constraints[[pair_i+1]], pair_i)
 	}
-
+    var_result$constr <- var_result$constr %>% as.matrix
+    var_result$dir <- var_result$dir %>% as.vector
+    var_result$rhs <- var_result$rhs %>% as.vector
 	return(var_result)
 }
 

@@ -303,16 +303,18 @@ merge_constraints <- function(a,b){
     return(constr)
 }
 
-har_sample <- function(constr, n_samples, thin) {
-    state <- har.init(constr, thin = thin)
-    samples <- har.run(state, n.samples = n_samples)$samples %>% as.data.frame
-    return(samples)
+har_sample <- function(constr, n_samples) {
+    x_dimensionality <- ncol(constr$constr)
+    thin <- emiris_and_fisikopoulos_suggested_thin_steps(x_dimensionality)
+    print(paste("har thin steps:",thin,"for dimensionality_x=",x_dimensionality))
+    samples <- hitandrun(constr, n.samples=n_samples, thin=thin)
+    return(samples %>% as.data.frame)
 }
 
-pb_har_sample <- function(constr, n_samples, thin, shards = 10) {
+pb_har_sample <- function(constr, n_samples, shards = 10) {
     samples_per_core <- n_samples/shards
     samples <- pbmclapply(1:shards, function(i) {
-        har_sample(constr, n_samples = samples_per_core, thin = thin)
+        har_sample(constr, n_samples = samples_per_core)
     }, mc.cores = 6)
     message("dcrb'ing")
     return(dcrb(samples))
@@ -354,24 +356,47 @@ get_num_muscles_via_indices_for_muscles<- function(indices_for_muscles){
     }
     
 }
+##' emiris_and_fisikopoulos estimated mixing time
+##' useful for hit and run.  
+##' Ioannis Z Emiris and Vissarion Fisikopoulos. Efficient randomwalk
+##' methods for approximating polytope volume. arXiv preprint
+##' arXiv:1312.2873, 2013.
+##' @see har_sample
+##' @param n integer, dimensionality of the x variable in Ax=b for given system of inequalities
+##" @return p number of points to mix with during hit and run.
+emiris_and_fisikopoulos_suggested_thin_steps <- function(n) (10 + (10/n))*n
+
+muscle_and_lambda_indices <- function(constr, num_muscles){
+    indices_for_muscles <- 1:ncol(constr$constr)
+    indices_for_lambdas <- (indices_for_muscles %% (num_muscles + 1)) != 0
+    indices_for_muscles <- indices_for_muscles[indices_for_lambdas]
+    return(list(indices_for_muscles=indices_for_muscles, indices_for_lambdas=indices_for_lambdas))
+    }
+
+    
+indices_to_control<- function(constr_object, indices_for_muscles){
+    indices_to_control <- rep(1, ncol(constr_object$constr))
+    # only optimizing over the output force
+    indices_to_control[indices_for_muscles] <- 0
+    c_in_cTx <- indices_to_control
+    return(c_in_cTx)
+}
+
 # to get the opposite direction, change the sign of the direction.
 lpsolve_force_in_dir <- function(min_or_max, direction_constraint, indices_for_muscles) {
     # show interest in maximizing the lambda scaler parameter only.
     num_muscles <- get_num_muscles_via_indices_for_muscles(indices_for_muscles)
-    indices_to_control <- rep(1, ncol(direction_constraint$constr))
-    # only optimizing over the output force
-    indices_to_control[indices_for_muscles] <- 0
-    c_in_cTx <- indices_to_control
+    c_in_cTx <- indices_to_control(direction_constraint, indices_for_muscles)
     num_tasks <- sum(c_in_cTx)
     lp_result <- lp(min_or_max, objective.in = c_in_cTx, const.mat = direction_constraint$constr,
         const.dir = direction_constraint$dir, const.rhs = direction_constraint$rhs,
         compute.sens = 0)
     output_wrench_dimensionality <- 4
-    lambda_constraint_columns <- direction_constraint$constr[, which(indices_to_control ==
+    lambda_constraint_columns <- direction_constraint$constr[, which(c_in_cTx ==
         1)] %>% as.data.frame
 
     lambda_start_indices <- head(which(0:nrow(lambda_constraint_columns)%%22 == 0),
-        sum(indices_to_control))
+        sum(c_in_cTx))
     lambda_indices <- sapply(lambda_start_indices, function(x) return(x:(x + (output_wrench_dimensionality -
         1))))
     task_directions_of_interest <- lapply(1:ncol(lambda_indices), function(i) {

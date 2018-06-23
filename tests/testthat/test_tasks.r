@@ -39,7 +39,7 @@ test_that("make feasible task trajectory", {
     # task direction.
 
     constr <- constraint_H_with_bounds(H_matrix, c(5, 0, 0, 0), bounds_tuple_of_numeric)
-    points <- har_sample(constr, 10000, 100)
+    points <- har_sample(constr, 10000)
     colnames(points) <- muscle_name_per_index
     # Generate points without delta constraints
     expect_true(all(colMins(points) > 0))
@@ -84,10 +84,8 @@ test_that("(har vs lpSolve) estimations of fmax in a given dir are expected to b
             0, 0, 0), bounds_tuple_of_numeric)
         positive_fx_direction_constraint <- a_matrix_lhs_direction(H_matrix, direction = c(1,
             0, 0, 0), bounds_tuple_of_numeric)
-        res_neg <- pb_har_sample(negative_fx_direction_constraint, n_samples = 10000,
-            thin = 100)
-        res_pos <- pb_har_sample(positive_fx_direction_constraint, n_samples = 10000,
-            thin = 100)
+        res_neg <- pb_har_sample(negative_fx_direction_constraint, n_samples = 10000)
+        res_pos <- pb_har_sample(positive_fx_direction_constraint, n_samples = 10000)
 
         expect_equal(colMaxes(res_pos[, 1:7]), colMaxes(res_neg[1:7]), tol = 0.01)
         expect_equal(colMins(res_pos[, 1:7]), colMins(res_neg[, 1:7]), tol = 0.01)
@@ -110,11 +108,14 @@ test_that("(har vs lpSolve) estimations of fmax in a given dir are expected to b
         expect_false(abs(max(res_neg[, 8]) - max_lp_negative$vector_magnitude_per_task[[1]]) <
             0.001)
     })
+
+skip_if_not(run_full_long_tests, message = deparse(substitute(condition)))
 test_that("output_folder paths work", {
     expect_equal(output_filepath("hexbin/hexbin.html"), "../../output/hexbin/hexbin.html")
     expect_equal(output_subfolder_path("hexbin", "hexbin.html"), "../../output/hexbin/hexbin.html")
 })
 
+skip_if_not(run_full_long_tests, message = deparse(substitute(condition)))
 test_that("we can generate and har upon each task polytope independently", {
     positive_fx_direction_constraint <- a_matrix_lhs_direction(H_matrix, direction = c(1,
         0, 0, 0), bounds_tuple_of_numeric)
