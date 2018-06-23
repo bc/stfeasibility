@@ -71,10 +71,11 @@ test_that("we can generate and har upon each task polytope independently", {
         (1 - 1e-05), n_task_values = 60, cycles_per_second = 2, cyclical_function = force_cos_ramp,
         output_dimension_names = force_dimnames,
         bounds_tuple_of_numeric)
-    spatiotemporal_inequality_constraints <- diagonal_merge_constraint_list(tasks_and_constraints$constraint)
-    spatiotemporal_inequality_constraints$constr <- as.matrix(spatiotemporal_inequality_constraints$constr)
-    st_task_and_constraint <- list(tasks=tasks_and_constraints$tasks, constraint=spatiotemporal_inequality_constraints)
-    plot_constraint_matrix(spatiotemporal_inequality_constraints)
+
+	inequality_constraints <- diagonal_merge_constraint_list(tasks_and_constraints$constraint)
+	browser()
+	st_constr <- generate_and_add_velocity_constraint(inequality_constraints, 0.042, 0.040, muscle_and_lambda_indices(inequality_constraints, 7)$indices_for_muscles, 7)
+    plot_constraint_matrix(st_constr)
     devtools::use_data(st_task_and_constraint)
    })
 test_that("spatiotemporal tunnel har is computationally tractable", {

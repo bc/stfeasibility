@@ -47,7 +47,7 @@ velocity_constraint_rownames <- function(info_per_transition, cols_per_task, num
 compose_velocity_constraint_per_transition <- function(transition_blocks, cols_per_task, num_muscles){
 velocity_constraint <- lapply(1:length(transition_blocks), function(transition_index){
 	left_pad_blocks <- transition_index - 1
-	right_pad_blocks <- -transition_index + 5
+	right_pad_blocks <- -transition_index + length(transition_blocks)
 	L <- zeros(num_muscles*2, cols_per_task*left_pad_blocks) %>% as.data.frame
 	R <- zeros(num_muscles*2, cols_per_task*right_pad_blocks) %>% as.data.frame
 	constraint_row <- cbind(L, transition_blocks[[transition_index]], R)
@@ -72,14 +72,14 @@ set_dimnames <- function(input_df_or_mat, colnames_to_use, rownames_to_use) {
     return(df_or_mat)
 }
 
-generate_and_add_velocity_constraint <- function(constraint_object, max_allowable_increasing_tension_speed, max_allowable_decreasing_tension_speed, indices_for_muscles){
-	velocity_constraint <- generate_full_velocity_constraint(constraint_object, max_allowable_increasing_tension_speed, max_allowable_decreasing_tension_speed, indices_for_muscles)
+generate_and_add_velocity_constraint <- function(constraint_object, max_allowable_increasing_tension_speed, max_allowable_decreasing_tension_speed, indices_for_muscles, num_muscles){
+	velocity_constraint <- generate_full_velocity_constraint(constraint_object, max_allowable_increasing_tension_speed, max_allowable_decreasing_tension_speed, indices_for_muscles, num_muscles)
 	constraint_with_velocity_requirements <- merge_constraints(constraint_object, velocity_constraint)
 	return(constraint_with_velocity_requirements)
 }
 
-generate_full_velocity_constraint <- function(constraint_object, max_allowable_increasing_tension_speed, max_allowable_decreasing_tension_speed, indices_for_muscles){
-	num_muscles <- get_num_muscles_via_indices_for_muscles(indices_for_muscles)
+generate_full_velocity_constraint <- function(constraint_object, max_allowable_increasing_tension_speed, max_allowable_decreasing_tension_speed, indices_for_muscles, num_muscles){
+	num_muscles
 	num_tasks <- sum(indices_to_control(constraint_object, indices_for_muscles))
 	num_pairs <- num_tasks - 1
 	velocity_constraint <- generate_velocity_constraint_matrix(constraint_object, indices_for_muscles, num_tasks, num_pairs, num_muscles)
@@ -94,10 +94,11 @@ generate_velocity_constraint_matrix <- function(constraint_object, indices_for_m
 	    cols_per_task <- num_muscles + 1
 	    info_per_transition <- transition_specifications(constraint_object, num_pairs, cols_per_task, num_muscles)
 	    constraint_rownames <- velocity_constraint_rownames(info_per_transition, cols_per_task, num_muscles)
-
 	    transition_blocks <- lapply(info_per_transition, transition_inequalities_for_velocity)
 	    velocity_constraint <- compose_velocity_constraint_per_transition(transition_blocks,
-	        cols_per_task, num_muscles) %>% combine_velocity_constraints %>% set_dimnames(colnames(constraint_object$constr),
+	        cols_per_task, num_muscles) %>% combine_velocity_constraints
+	    expect_equal(num_pairs*num_muscles*2, nrow(velocity_constraint))
+	    set_dimnames(velocity_constraint, colnames(constraint_object$constr),
 	        constraint_rownames)
     	return(velocity_constraint)
 	}
