@@ -14,6 +14,8 @@ knitr::opts_chunk$set(
 
 # stfeasibility
 
+![some_text](https://user-images.githubusercontent.com/13772726/41803667-211f53bc-7640-11e8-9f5d-a91df3a62712.png)
+
 The goal of stfeasibility is to evaluate, for a given force trajectory, for a static tendon-driven limb, the feasible combinations of time-varying muscle activation patterns.
 
 ## Installation

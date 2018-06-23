@@ -1,7 +1,9 @@
 ##
-constraint_H_rhs_b <- function(A, b) {
+create_equality_constraint <- function(A, b) {
+    stop_if_dimensionality_names_are_missing(A)
     constr <- list(constr = rbind(A, -A), dir = rep("<=", 2 * nrow(A)), rhs = c(b,
         -b))
+    rownames(constr$constr) <- c(rownames(A), negative_string(rownames(A)))
     return(constr)
 }
 unit_cube_zoom <- function() coord_cartesian(xlim = c(0, 1), ylim = c(0, 1))
@@ -180,25 +182,34 @@ output_filepath <- function(filename, out_path = "../../output") file.path(out_p
 negative_cos <- function(...) -cos(...)
 force_cos_ramp <- function(...) negative_cos(...) * 0.5 + 0.5
 
+generate_tasks_and_corresponding_constraints <- function(H_matrix, vector_out, n_task_values, cycles_per_second, cyclical_function, output_dimension_names, bounds_tuple_of_numeric){
+        tasks <- task_time_df(fmax_task = vector_out, n_samples = n_task_values, cycles_per_second = cycles_per_second,
+            cyclical_function = cyclical_function, output_dimension_names = output_dimension_names)
+        list_of_constraints_per_task <- apply(tasks, 1, function(x) {
+            # browser()
+            a_matrix_lhs_direction(H_matrix, x[output_dimension_names], bounds_tuple_of_numeric)
+           # constraint_H_with_bounds(H_matrix, x[output_dimension_names], bounds_tuple_of_numeric)
+        })
+    return(list(tasks=tasks, constraints = list_of_constraints_per_task))
+}
 
 generate_task_trajectory_and_har <- function(H_matrix, vector_out, n_task_values,
     cycles_per_second, cyclical_function, output_dimension_names, muscle_name_per_index,
     bounds_tuple_of_numeric, num_har_samples, har_thin, ...) {
-    tasks <- task_time_df(fmax_task = vector_out, n_samples = n_task_values, cycles_per_second = cycles_per_second,
-        cyclical_function = cyclical_function, output_dimension_names = output_dimension_names)
-    list_of_constraints_per_task <- apply(tasks, 1, function(x) {
-        constraint_H_with_bounds(H_matrix, x[output_dimension_names], bounds_tuple_of_numeric)
-    })
-    bigL <- list_of_constraints_per_task %>% pbmclapply(. %>% har_sample(num_har_samples,
+    tasks_and_constraints <- generate_tasks_and_corresponding_constraints(vector_out,
+        n_task_values, cycles_per_second, cyclical_function, output_dimension_names,
+        bounds_tuple_of_numeric)
+    bigL <- tasks_and_constraints$constraints %>% pbmclapply(. %>% har_sample(num_har_samples,
         thin = har_thin), ...)
     bigL_labeled <- lapply(1:length(bigL), function(list_index) {
-        cbind(tasks[list_index, ], bigL[[list_index]], row.names = NULL)
+        cbind(tasks_and_constraints$tasks[list_index, ], bigL[[list_index]], row.names = NULL)
     })
-    bigL_column_labeled <- lapply(bigL_labeled, set_colnames, c(colnames(tasks),
+    bigL_column_labeled <- lapply(bigL_labeled, set_colnames, c(colnames(tasks_and_constraints$tasks),
         muscle_name_per_index))
     har_per_task_df <- bigL_column_labeled %>% dcrb
     return(har_per_task_df)
 }
+
 
 ggparcoord_har <- function(df) {
     ggparcoord(df, scale = "globalminmax", alpha = 0.01, ...) + theme_classic()
@@ -233,6 +244,9 @@ task_time_df <- function(fmax_task, n_samples, cycles_per_second, cyclical_funct
     return(df)
 }
 
+
+append_with_underscore <- function(s,appendix) paste0(s,"_",appendix)
+
 where_muscles_have_unreasonable_values <- function(df, muscle_names) {
     apply(df[, muscle_names], 2, function(muscle_entries) {
         negative <- muscle_entries < 0
@@ -241,57 +255,89 @@ where_muscles_have_unreasonable_values <- function(df, muscle_names) {
     })
 }
 
-constraint_H_with_bounds <- function(A, b, bounds_tuple_of_numeric, muscle_names) {
-    H_constraint <- constraint_H_rhs_b(A, b)
-    bounds <- bound_constraints_for_all_muscles(bounds_tuple_of_numeric, muscle_names)
-    return(mergeConstraints(H_constraint, bounds))
+
+
+
+constraint_H_with_bounds <- function(A, b, bounds_tuple_of_numeric) {
+    H_constraint <- create_equality_constraint(A, b)
+    bounds <- bound_constraints_for_all_muscles(bounds_tuple_of_numeric, muscle_names=colnames(A))
+    return(merge_constraints(H_constraint, bounds))
 }
 
 constraint_H_lhs_direction <- function(A, direction, bounds_tuple_of_numeric) {
-    lhs <- constraint_H_rhs_b(A, rep(0, nrow(A)))
+    lhs <- create_equality_constraint(A, rep(0, nrow(A)))
 
 }
 
-add_null_column_to_end_of_lhs <- function(constraint) {
+add_null_column_to_end_of_lhs <- function(constraint, column_name) {
     c_copy <- constraint
     output_dimensionality <- nrow(constraint$constr)
     c_copy$constr <- cbind(constraint$constr, rep(0, output_dimensionality))
+    colnames(c_copy$constr)[ncol(c_copy$constr)] <- column_name
     return(c_copy)
 }
 
+stop_if_dimensionality_names_are_missing <- function(df){
+    if (is.null(rownames(df)) | is.null(colnames(df)))
+    {
+        stop("A matrix passed to a_matrix_lhs_direction must have colnames and rownames for the dimensions of input and output")
+    }
+}
+
+
+zeros_df <- function(nrow,ncol) data.frame(matrix(0, ncol = ncol, nrow = nrow))
+
 ##' @param A equality constraints—must have named columns and rows for input and output dimensions
 ##' @param direction the direction to generate constraints on. Must have an attr(direction, "output_dimension_names") with a string name for each dimension. same len as direction
-a_matrix_lhs_direction <- function(A, direction, bounds_tuple_of_numeric) {
-    muscle_names <- colnames(A)
-    output_dimension_names <- rownames(A)
-    A_block <- constraint_H_rhs_b(cbind(A, -direction), rep(0, nrow(A)))
-    bounds_raw <- bound_constraints_for_all_muscles(bounds_tuple_of_numeric,muscle_names)
-    bounds <- add_null_column_to_end_of_lhs(bounds_raw)
-    constraint <- mergeConstraints(A_block, bounds)
-    constraint$constr_dimnames <- c(muscle_names, "task_lambda")
-    constraint$rhs_dimnames <- c(output_dimension_names, output_dimension_names %>% negative_string)
-    browser()
+a_matrix_lhs_direction <- function(H_matrix, direction, bounds_tuple_of_numeric) {
+    task_lambda_colname <- "task_lambda"
+    stop_if_dimensionality_names_are_missing(H_matrix)
+    muscle_names <- colnames(H_matrix)
+    output_dimension_names <- rownames(H_matrix)
+    A_block <- create_equality_constraint(cbind(H_matrix, -direction), rep(0, nrow(H_matrix)))
+    colnames(A_block$constr)[ncol(A_block$constr)] <- task_lambda_colname
+    bounds_raw <- bound_constraints_for_all_muscles(bounds_tuple_of_numeric, muscle_names)
+    bounds <- add_null_column_to_end_of_lhs(bounds_raw, column_name=task_lambda_colname)
+    constraint <- merge_constraints(A_block, bounds)
     return(constraint)
 }
 ##' @see a_matrix_lhs_direction
 negative_string <- function(s) paste0("-",s)
 
-merge_diagonal_constraints <- function(constr_A, constr_B) {
-    A_dimensions <- nrow(constr_A$constr)
-    B_dimensions <- nrow(constr_B$constr)
+##' wrapped merge_constraints that respsects the rhs_dimnames and constr_dimnames
+merge_constraints <- function(a,b){
+    constr <- mergeConstraints(a,b)
+    constr$rhs_dimnames <- c(a$dimnames, b$dimnames)
+    constr$constr_dimnames <- a$constr_dimnames
+    return(constr)
+}
+har_time_estimate <- function(constr, n_samples, thin) {
+    if(abs(thin - 480) < 100){
 
+    dat <- structure(list(x = c(1000, 10000, 20000, 50000, 1e+05, 2e+05, 5e+05),
+        y = c(32, 46, 64, 114, 200, 370, 870)), class = "data.frame", row.names = c(NA,
+        -7L))
+    lm_fit <- lm(y ~ x, data = dat)
+    interval <- predict(lm_fit, data.frame(x = n_samples), interval = "predict")
+    plus_or_minus <- floor((interval[[3]] - interval[[2]])/2)
+    message(paste(as.character(floor(interval[[1]])), "+/-", as.character(plus_or_minus), "seconds expected for", n_samples,"har points"))
+    }
 }
 
-har_sample <- function(constr, n_samples, thin) {
-    state <- har.init(constr, thin = thin)
-    samples <- har.run(state, n.samples = n_samples)$samples %>% as.data.frame
-    return(samples)
+har_sample <- function(constr, n_samples, ...) {
+    x_dimensionality <- ncol(constr$constr)
+    thin <- emiris_and_fisikopoulos_suggested_thin_steps(x_dimensionality)
+    message(paste("har thin steps:",thin,"for dimensionality_x=",x_dimensionality, ""))
+    har_time_estimate(constr, n_samples, thin)
+    samples <- hitandrun(constr, n.samples=n_samples, thin=thin, ...)
+    colnames(samples) <- colnames(constr$constr)
+    return(samples %>% as.data.frame)
 }
 
-pb_har_sample <- function(constr, n_samples, thin, shards = 10) {
+pb_har_sample <- function(constr, n_samples, shards = 10) {
     samples_per_core <- n_samples/shards
     samples <- pbmclapply(1:shards, function(i) {
-        har_sample(constr, n_samples = samples_per_core, thin = thin)
+        har_sample(constr, n_samples = samples_per_core)
     }, mc.cores = 6)
     message("dcrb'ing")
     return(dcrb(samples))
@@ -304,10 +350,10 @@ bound_constraints_for_all_muscles <- function(bounds_tuple_of_numeric, muscle_na
     res <- lapply(1:n_muscles, function(muscle_index) {
         lb <- lowerBoundConstraint(n_muscles, muscle_index, bounds_tuple_of_numeric[[muscle_index]]$lower)
         ub <- upperBoundConstraint(n_muscles, muscle_index, bounds_tuple_of_numeric[[muscle_index]]$upper)
-        return(mergeConstraints(lb, ub))
+        return(merge_constraints(lb, ub))
     }) %>% mergeConstraints
-    res$rhs_dimnames <- dcclapply(muscle_names, lb_ub_strings)
-    res$constr_dimnames <- muscle_names
+    rownames(res$constr) <- dcclapply(muscle_names, lb_ub_strings)
+    colnames(res$constr) <- muscle_names
     return(res)
 }
 
@@ -316,17 +362,82 @@ dcclapply <- function(...){
     dcc(lapply(...) )
 }
 
+split_into_pieces <- function(vector, slice_size){
+    if (length(vector) %% slice_size != 0) {
+        stop("input was not cleanly split into the desired slice size")
+    }
+    split(vector, seq_along(vector)/slice_size)
+}
+
+##' @see lpsolve_force_in_dir
+get_num_muscles_via_indices_for_muscles<- function(indices_for_muscles){
+    muscles_are_true <- 1:max(indices_for_muscles) %in% indices_for_muscles
+    if (all(muscles_are_true)){
+        return(length(indices_for_muscles))
+    }else {
+        return(which(!(muscles_are_true))[1]-1)    
+    }
+    
+}
+##' emiris_and_fisikopoulos estimated mixing time
+##' useful for hit and run.  
+##' Ioannis Z Emiris and Vissarion Fisikopoulos. Efficient randomwalk
+##' methods for approximating polytope volume. arXiv preprint
+##' arXiv:1312.2873, 2013.
+##' @see har_sample
+##' @param n integer, dimensionality of the x variable in Ax=b for given system of inequalities
+##" @return p number of points to mix with during hit and run.
+emiris_and_fisikopoulos_suggested_thin_steps <- function(n) (10 + (10/n))*n
+
+
+
+muscle_and_lambda_indices <- function(constr, num_muscles){
+    indices_for_muscles <- 1:ncol(constr$constr)
+    indices_for_lambdas <- (indices_for_muscles %% (num_muscles + 1)) != 0
+    indices_for_muscles <- indices_for_muscles[indices_for_lambdas]
+    return(list(indices_for_muscles=indices_for_muscles, indices_for_lambdas=indices_for_lambdas))
+    }
+
+    
+indices_to_control<- function(constr_object, indices_for_muscles){
+    indices_to_control <- rep(1, ncol(constr_object$constr))
+    # only optimizing over the output force
+    indices_to_control[indices_for_muscles] <- 0
+    c_in_cTx <- indices_to_control
+    return(c_in_cTx)
+}
+
 # to get the opposite direction, change the sign of the direction.
-lpsolve_force_in_dir <- function(min_or_max, direction_constraint, n_muscles) {
+lpsolve_force_in_dir <- function(min_or_max, direction_constraint, indices_for_muscles) {
     # show interest in maximizing the lambda scaler parameter only.
-    c_in_cTx <- c(rep(0, n_muscles), 1)
+    num_muscles <- get_num_muscles_via_indices_for_muscles(indices_for_muscles)
+    c_in_cTx <- indices_to_control(direction_constraint, indices_for_muscles)
+    num_tasks <- sum(c_in_cTx)
     lp_result <- lp(min_or_max, objective.in = c_in_cTx, const.mat = direction_constraint$constr,
         const.dir = direction_constraint$dir, const.rhs = direction_constraint$rhs,
         compute.sens = 0)
-    dir_of_interest <- direction_constraint$constr[1:4, ncol(direction_constraint$constr)]
-    vector_out <- -1 * dir_of_interest * lp_result$objval
-    vector_magnitude <- sqrt(sum(vector_out^2))
-    output_structure <- list(lambda_scaler = -lp_result$objval, muscle_activations = lp_result$solution[1:n_muscles],
-        vector_out = vector_out, vector_magnitude = vector_magnitude)
+    output_wrench_dimensionality <- 4
+    lambda_constraint_columns <- direction_constraint$constr[, which(c_in_cTx ==
+        1)] %>% as.data.frame
+
+    lambda_start_indices <- head(which(0:nrow(lambda_constraint_columns)%%22 == 0),
+        sum(c_in_cTx))
+    lambda_indices <- sapply(lambda_start_indices, function(x) return(x:(x + (output_wrench_dimensionality -
+        1))))
+    task_directions_of_interest <- lapply(1:ncol(lambda_indices), function(i) {
+        # multiplied by -1 because we need to move the output direction back to the rhs
+        -lambda_constraint_columns[lambda_indices[, i], i]
+    })
+    lambda_values <- lp_result$solution[c_in_cTx == 1]
+    output_vector_per_task <- lapply(1:num_tasks, function(i) {
+        task_directions_of_interest[[i]] * lambda_values[i]
+    })
+    vector_magnitude_per_task <- lapply(output_vector_per_task, function(vector_out) sqrt(sum(vector_out^2)))
+    muscle_activation_pattern_per_task <- t(matrix(lp_result$solution, nrow = num_muscles +
+        1)[1:(num_muscles), ]) %>% df_to_list_of_rows
+    output_structure <- list(total_cost = lp_result$objval, direction_per_task = task_directions_of_interest,
+        muscle_activation_pattern_per_task = muscle_activation_pattern_per_task,
+        lambda_values = lambda_values, output_vector_per_task = output_vector_per_task,
+        vector_magnitude_per_task = vector_magnitude_per_task)
     return(output_structure)
 }
