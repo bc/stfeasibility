@@ -196,11 +196,10 @@ generate_tasks_and_corresponding_constraints <- function(H_matrix, vector_out, n
 generate_task_trajectory_and_har <- function(H_matrix, vector_out, n_task_values,
     cycles_per_second, cyclical_function, output_dimension_names, muscle_name_per_index,
     bounds_tuple_of_numeric, num_har_samples, har_thin, ...) {
-    tasks_and_constraints <- generate_tasks_and_corresponding_constraints(vector_out,
-        n_task_values, cycles_per_second, cyclical_function, output_dimension_names,
-        bounds_tuple_of_numeric)
-    bigL <- tasks_and_constraints$constraints %>% pbmclapply(. %>% har_sample(num_har_samples,
-        thin = har_thin), ...)
+    tasks_and_constraints <- generate_tasks_and_corresponding_constraints(H_matrix=H_matrix, vector_out=vector_out,
+        n_task_values=n_task_values, cycles_per_second=cycles_per_second, cyclical_function=cyclical_function, output_dimension_names=output_dimension_names,
+        bounds_tuple_of_numeric=bounds_tuple_of_numeric)
+    bigL <- tasks_and_constraints$constraints %>% pbmclapply(. %>% har_sample(num_har_samples), ...)
     bigL_labeled <- lapply(1:length(bigL), function(list_index) {
         cbind(tasks_and_constraints$tasks[list_index, ], bigL[[list_index]], row.names = NULL)
     })
@@ -320,7 +319,7 @@ har_time_estimate <- function(constr, n_samples, thin) {
     lm_fit <- lm(y ~ x, data = dat)
     interval <- predict(lm_fit, data.frame(x = n_samples), interval = "predict")
     plus_or_minus <- floor((interval[[3]] - interval[[2]])/2)
-    message(paste(as.character(floor(interval[[1]])), "+/-", as.character(plus_or_minus), "seconds expected for", n_samples,"har points"))
+    message(paste0(as.character(floor(interval[[1]])), "+/-", as.character(plus_or_minus), " seconds expected for ", n_samples," har points"))
     }
 }
 
