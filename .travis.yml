@@ -10,7 +10,8 @@ r_packages:
      - covr
 warnings_are_errors: false
 install:
-  - R -e "0" --args --bootstrap-packrat
+  - R -e "install.packages('devtools')"
+  # - R -e "0" --args --bootstrap-packrat
 sudo: false 
 git:
   depth: 1

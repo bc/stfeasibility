@@ -31,13 +31,14 @@ test_that("we can merge constraints in bulk", {
 
 	context("conglomerate and standalone constraints")
 	num_muscles <- 7
-	indices <- muscle_and_lambda_indices(big$constr, num_muscles)
+	indices <- muscle_and_lambda_indices(big, num_muscles)
 	conglomerate_constraint <- lpsolve_force_in_dir("max", big, indices_for_muscles=indices$indices_for_muscles)
 	standalone_constraint   <- lpsolve_force_in_dir("max", first_constraint, indices_for_muscles=1:7)
 	standalone_constraint2  <- lpsolve_force_in_dir("max", second_constraint, indices_for_muscles=1:7)
 	expect_equal(conglomerate_constraint$output_vector_per_task[[1]], standalone_constraint$output_vector_per_task[[1]])
 	expect_equal(conglomerate_constraint$output_vector_per_task[[2]], standalone_constraint2$output_vector_per_task[[1]])
-	colnames(big_sample) <- colnames(big$constr)
+	colnames(big) <- colnames(big$constr)
+	multiconstraint <- big
 	devtools::use_data(multiconstraint, overwrite=TRUE)
 
 })
@@ -53,7 +54,7 @@ test_that("mbm har multiconstraint", {
 })
 
 test_that("mbm har multiconstraint velocity", {
-	r <- generate_and_add_velocity_constraint(multiconstraint, 1.0, 1.0, muscle_and_lambda_indices(multiconstraint, 7)$indices_for_muscles)
+	r <- generate_and_add_velocity_constraint(multiconstraint, 1.0, 1.0, muscle_and_lambda_indices(multiconstraint, 7)$indices_for_muscles, 7)
 		mbm <- microbenchmark(
 		"1e3" = {a <- r %>% har_sample(1e3); print("1/4" %>% paste(Sys.time()))},
 		# "1e4" 	= {b <- r %>% har_sample(1e4); print("2/4" %>% paste(Sys.time()))},
