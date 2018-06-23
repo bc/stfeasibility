@@ -302,12 +302,26 @@ merge_constraints <- function(a,b){
     constr$constr_dimnames <- a$constr_dimnames
     return(constr)
 }
+har_time_estimate <- function(constr, n_samples, thin) {
+    if(abs(thin - 480) < 100){
 
-har_sample <- function(constr, n_samples) {
+    dat <- structure(list(x = c(1000, 10000, 20000, 50000, 1e+05, 2e+05, 5e+05),
+        y = c(32, 46, 64, 114, 200, 370, 870)), class = "data.frame", row.names = c(NA,
+        -7L))
+    lm_fit <- lm(y ~ x, data = dat)
+    interval <- predict(lm_fit, data.frame(x = n_samples), interval = "predict")
+    plus_or_minus <- floor((interval[[3]] - interval[[2]])/2)
+    message(paste(as.character(floor(interval[[1]])), "+/-", as.character(plus_or_minus), "seconds expected for", n_samples,"har points"))
+    }
+}
+
+har_sample <- function(constr, n_samples, ...) {
     x_dimensionality <- ncol(constr$constr)
     thin <- emiris_and_fisikopoulos_suggested_thin_steps(x_dimensionality)
-    print(paste("har thin steps:",thin,"for dimensionality_x=",x_dimensionality))
-    samples <- hitandrun(constr, n.samples=n_samples, thin=thin)
+    message(paste("har thin steps:",thin,"for dimensionality_x=",x_dimensionality, ""))
+    har_time_estimate(constr, n_samples, thin)
+    samples <- hitandrun(constr, n.samples=n_samples, thin=thin, ...)
+    colnames(samples) <- colnames(constr$constr)
     return(samples %>% as.data.frame)
 }
 
@@ -365,6 +379,8 @@ get_num_muscles_via_indices_for_muscles<- function(indices_for_muscles){
 ##' @param n integer, dimensionality of the x variable in Ax=b for given system of inequalities
 ##" @return p number of points to mix with during hit and run.
 emiris_and_fisikopoulos_suggested_thin_steps <- function(n) (10 + (10/n))*n
+
+
 
 muscle_and_lambda_indices <- function(constr, num_muscles){
     indices_for_muscles <- 1:ncol(constr$constr)

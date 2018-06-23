@@ -43,19 +43,25 @@ test_that("we can merge constraints in bulk", {
 })
 test_that("mbm har multiconstraint", {
 		mbm <- microbenchmark(
-		"one_hundred3" = {multiconstraint %>% har_sample(1e3); print("sample complete for onehundred,1e3" %>% paste(Sys.time()))},
-		"one_hundred4" = {multiconstraint %>% har_sample(1e4); print("sample complete for onehundred,1e4" %>% paste(Sys.time()))},
-		"one_hundred2e4" = {multiconstraint %>% har_sample(2e4); print("sample complete for onehundred,1e4" %>% paste(Sys.time()))},
-		"one_hundred5e4" = {multiconstraint %>% har_sample(5e4); print("sample complete for onehundred,1e4" %>% paste(Sys.time()))},
-		"one_hundred1e5" = {multiconstraint %>% har_sample(1e5); print("sample complete for onehundred,1e4" %>% paste(Sys.time()))},
-		"one_hundred2e5" = {multiconstraint %>% har_sample(2e5); print("sample complete for onehundred,1e4" %>% paste(Sys.time()))},
-		"one_hundred5e5" = {multiconstraint %>% har_sample(5e5); print("sample complete for onehundred,1e4" %>% paste(Sys.time()))},
+		"har_1e3" = {multiconstraint %>% har_sample(1e3); print("1/7" %>% paste(Sys.time()))},
+		"har_1e4" = {multiconstraint %>% har_sample(1e4); print("2/7" %>% paste(Sys.time()))},
+		"har_1e5" = {multiconstraint %>% har_sample(1e5); print("5/7" %>% paste(Sys.time()))},
+		"har_5e5" = {multiconstraint %>% har_sample(5e5); print("7/7" %>% paste(Sys.time()))},
+		times=1
+	)
+})
+
+test_that("mbm har multiconstraint velocity", {
+	r <- generate_and_add_velocity_constraint(multiconstraint, 1.0, 1.0, muscle_and_lambda_indices(multiconstraint, 7)$indices_for_muscles)
+		mbm <- microbenchmark(
+		"2e4_eliminate_default" = {a <- r %>% har_sample(1e3); print("1/4" %>% paste(Sys.time()))},
+		"2e4_eliminate_false" 	= {b <- r %>% har_sample(1e4); print("2/4" %>% paste(Sys.time()))},
+		"2e4_eliminate_false" 	= {c <- r %>% har_sample(1e5); print("2/4" %>% paste(Sys.time()))},
 		times=1
 	)
 })
 
 test_that("velocity_constraint works on multiconstraint", {
-	add_velocity_constraint(multiconstraint, 
-		indices_for_muscles = muscle_and_lambda_indices(multiconstraint, 7)$indices_for_muscles,
-		num_muscles=7 )
+
+	trajectories <- r $>$ har_sample(200)
 })
