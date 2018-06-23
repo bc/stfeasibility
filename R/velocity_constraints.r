@@ -14,7 +14,6 @@ transition_specifications <- function(constraint_object, num_pairs, cols_per_tas
 		from_here <- (cols_per_task*pair_index-num_muscles)
 		to_here <- (pair_index*cols_per_task)
 		transition_indices <- from_here:(to_here+cols_per_task)
-		print(transition_indices)
 		transition_colnames <- colnames(constraint_object$constr)[transition_indices]
 		return(list(indices=transition_indices, colnames=transition_colnames, num_muscles=num_muscles))
 	})
