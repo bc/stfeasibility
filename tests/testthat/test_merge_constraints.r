@@ -37,7 +37,7 @@ test_that("we can merge constraints in bulk", {
 	standalone_constraint2  <- lpsolve_force_in_dir("max", second_constraint, indices_for_muscles=1:7)
 	expect_equal(conglomerate_constraint$output_vector_per_task[[1]], standalone_constraint$output_vector_per_task[[1]])
 	expect_equal(conglomerate_constraint$output_vector_per_task[[2]], standalone_constraint2$output_vector_per_task[[1]])
-	colnames(big) <- colnames(big$constr)
+	colnames(big$constr) <- colnames(big$constr)
 	multiconstraint <- big
 	devtools::use_data(multiconstraint, overwrite=TRUE)
 
