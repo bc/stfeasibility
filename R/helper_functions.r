@@ -243,6 +243,24 @@ where_muscles_have_unreasonable_values <- function(df, muscle_names) {
     })
 }
 
+diagonal_merge_constraints <- function(first_constraint, second_constraint, string_to_append_to_second_constraint){
+    first_constraint_copy <- first_constraint
+    second_constraint_copy <- second_constraint
+
+    padding_for_constraint1 <- zeros_df(nrow(first_constraint$constr), ncol(second_constraint$constr))
+    appended_second_constraint_colnames <- paste(colnames(second_constraint$constr),string_to_append_to_second_constraint, sep="_")
+    dimnames(padding_for_constraint1) <- list(rownames(first_constraint$constr),appended_second_constraint_colnames)
+    first_constraint_copy$constr <- cbind(first_constraint$constr, padding_for_constraint1)
+
+    padding_for_constraint2 <- zeros_df(nrow(second_constraint$constr), ncol(second_constraint$constr))
+    dimnames(padding_for_constraint2) <- list(rownames(second_constraint$constr),colnames(first_constraint$constr))
+    second_constraint_copy$constr <- cbind(padding_for_constraint2, second_constraint$constr)
+    rownames(second_constraint_copy$constr) <- paste(rownames(second_constraint$constr),string_to_append_to_second_constraint, sep="_")
+    merged_constraint <- merge_constraints(first_constraint_copy, second_constraint_copy)
+    browser()
+    return(merged_constraint)
+}
+
 constraint_H_with_bounds <- function(A, b, bounds_tuple_of_numeric) {
     H_constraint <- create_equality_constraint(A, b)
     bounds <- bound_constraints_for_all_muscles(bounds_tuple_of_numeric, muscle_names=colnames(A))
@@ -288,12 +306,6 @@ a_matrix_lhs_direction <- function(H_matrix, direction, bounds_tuple_of_numeric)
 }
 ##' @see a_matrix_lhs_direction
 negative_string <- function(s) paste0("-",s)
-
-merge_diagonal_constraints <- function(constr_A, constr_B) {
-    A_dimensions <- nrow(constr_A$constr)
-    B_dimensions <- nrow(constr_B$constr)
-
-}
 
 ##' wrapped merge_constraints that respsects the rhs_dimnames and constr_dimnames
 merge_constraints <- function(a,b){
