@@ -101,10 +101,10 @@ test_that("(har vs lpSolve) estimations of fmax in a given dir are expected to b
             0.001)
         most_negative_mvc_fx <- H_matrix %*% max_lp_negative$muscle_activation_pattern_per_task[[1]]
         most_positive_mvc_fx <- H_matrix %*% max_lp_positive$muscle_activation_pattern_per_task[[1]]
-        expect_equal(as.numeric(most_negative_mvc_fx), c(-17.5927374630042,
-            -4.44089209850063e-16, 3.5527136788005e-15, -6.93889390390723e-18))
-        expect_equal(as.numeric(most_positive_mvc_fx), c(28.8115546379602,
-            -9.99200722162641e-16, 0, -2.42861286636753e-17))
+        expect_equal(as.numeric(most_negative_mvc_fx), c(-17.5927374630042, -4.44089209850063e-16,
+            3.5527136788005e-15, -6.93889390390723e-18))
+        expect_equal(as.numeric(most_positive_mvc_fx), c(28.8115546379602, -9.99200722162641e-16,
+            0, -2.42861286636753e-17))
         expect_false(abs(max(res_neg[, 8]) - max_lp_negative$vector_magnitude_per_task[[1]]) <
             0.001)
     })
@@ -135,3 +135,28 @@ test_that("we can generate and har upon each task polytope independently", {
         coord_fixed() + unit_cube_zoom() + theme_classic()
     gganimate::gganimate(p2, output_subfolder_path("points", "points.html"))
 })
+
+
+##' Output Filepath
+##' by default takes the starting working directory from the tests/testthat directory.
+##' @param out_path by default ../../output/
+##' @param filename filename of interest
+##' @return output_filepath stringpath
+output_filepath <- function(filename, out_path = "../../output") file.path(out_path,
+    filename)
+
+negative_cos <- function(...) -cos(...)
+force_cos_ramp <- function(...) negative_cos(...) * 0.5 + 0.5
+
+generate_tasks_and_corresponding_constraints <- function(H_matrix, vector_out, n_task_values,
+    cycles_per_second, cyclical_function, output_dimension_names, bounds_tuple_of_numeric) {
+    tasks <- task_time_df(fmax_task = vector_out, n_samples = n_task_values, cycles_per_second = cycles_per_second,
+        cyclical_function = cyclical_function, output_dimension_names = output_dimension_names)
+    list_of_constraints_per_task <- apply(tasks, 1, function(x) {
+        # browser()
+        a_matrix_lhs_direction(H_matrix, x[output_dimension_names], bounds_tuple_of_numeric)
+        # constraint_H_with_bounds(H_matrix, x[output_dimension_names],
+        # bounds_tuple_of_numeric)
+    })
+    return(list(tasks = tasks, constraints = list_of_constraints_per_task))
+}
