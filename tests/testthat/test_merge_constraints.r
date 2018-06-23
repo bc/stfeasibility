@@ -10,8 +10,6 @@ test_that("two constraints can be combined without affecting one another's indiv
 	show(p)
 })
 
-	
-
 test_that("we can merge constraints in bulk", {
 	# fx_constraint line
 	first_constraint<- a_matrix_lhs_direction(H_matrix, direction = c(1,0,0,0), bounds_tuple_of_numeric) 
@@ -30,5 +28,14 @@ test_that("we can merge constraints in bulk", {
 	big <- diagonal_merge_constraint_list(list_of_constraints)
 	p2 <- plot_constraint_matrix(big)
 	show(p2)
-	browser()
+
+	# res1 <- lpsolve_force_in_dir("max", list_of_constraints[[1]], indices_for_muscles=1:7)
+	indices_for_muscles <- 1:ncol(big$constr)
+	indices_for_lambdas <- indices_for_muscles %% 8 != 0
+	indices_for_muscles <- indices_for_muscles[indices_for_lambdas]
+	conglomerate_constraint <- lpsolve_force_in_dir("max", big, indices_for_muscles=indices_for_muscles)
+	standalone_constraint <- lpsolve_force_in_dir("max", first_constraint, indices_for_muscles=1:7)
+	standalone_constraint2 <- lpsolve_force_in_dir("max", second_constraint, indices_for_muscles=1:7)
+	expect_equal(conglomerate_constraint$output_vector_per_task[[1]], standalone_constraint$output_vector_per_task[[1]])
+	expect_equal(conglomerate_constraint$output_vector_per_task[[2]], standalone_constraint2$output_vector_per_task[[1]])
 })
