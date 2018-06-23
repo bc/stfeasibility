@@ -235,6 +235,9 @@ task_time_df <- function(fmax_task, n_samples, cycles_per_second, cyclical_funct
     return(df)
 }
 
+
+append_with_underscore <- function(s,appendix) paste0(s,"_",appendix)
+
 where_muscles_have_unreasonable_values <- function(df, muscle_names) {
     apply(df[, muscle_names], 2, function(muscle_entries) {
         negative <- muscle_entries < 0
@@ -259,6 +262,8 @@ diagonal_merge_constraints <- function(first_constraint, second_constraint, stri
     merged_constraint <- merge_constraints(first_constraint_copy, second_constraint_copy)
     return(merged_constraint)
 }
+
+
 
 constraint_H_with_bounds <- function(A, b, bounds_tuple_of_numeric) {
     H_constraint <- create_equality_constraint(A, b)
