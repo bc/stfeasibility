@@ -99,15 +99,15 @@ test_that("(har vs lpSolve) estimations of fmax in a given dir are expected to b
 
         # Hit and run does not get all the way to the vertex/edge unless you give it
         # infinite time.
-        expect_false(abs(max(res_pos[, 8]) - max_lp_positive$vector_magnitude) <
+        expect_false(abs(max(res_pos[, 8]) - max_lp_positive$vector_magnitude_per_task[[1]]) <
             0.001)
-        most_negative_mvc_fx <- H_matrix %*% max_lp_negative$muscle_activations
-        most_positive_mvc_fx <- H_matrix %*% max_lp_positive$muscle_activations
+        most_negative_mvc_fx <- H_matrix %*% max_lp_negative$muscle_activation_pattern_per_task[[1]]
+        most_positive_mvc_fx <- H_matrix %*% max_lp_positive$muscle_activation_pattern_per_task[[1]]
         expect_equal(as.numeric(most_negative_mvc_fx), c(-17.5927374630042,
             -4.44089209850063e-16, 3.5527136788005e-15, -6.93889390390723e-18))
         expect_equal(as.numeric(most_positive_mvc_fx), c(28.8115546379602,
             -9.99200722162641e-16, 0, -2.42861286636753e-17))
-        expect_false(abs(max(res_neg[, 8]) - max_lp_negative$vector_magnitude) <
+        expect_false(abs(max(res_neg[, 8]) - max_lp_negative$vector_magnitude_per_task[[1]]) <
             0.001)
     })
 test_that("output_folder paths work", {
@@ -120,7 +120,7 @@ test_that("we can generate and har upon each task polytope independently", {
         0, 0, 0), bounds_tuple_of_numeric)
     indices_for_muscles <- 1:7
     fmax_info <- lpsolve_force_in_dir("max", positive_fx_direction_constraint, indices_for_muscles)
-    har_per_task_df <- generate_task_trajectory_and_har(H_matrix = H_matrix, vector_out = fmax_info$vector_out *
+    har_per_task_df <- generate_task_trajectory_and_har(H_matrix = H_matrix, vector_out = fmax_info$output_vector_per_task[[1]] *
         (1 - 1e-05), n_task_values = 60, cycles_per_second = 2, cyclical_function = force_cos_ramp,
         output_dimension_names = force_dimnames, muscle_name_per_index = muscle_name_per_index,
         bounds_tuple_of_numeric = bounds_tuple_of_numeric, num_har_samples = 1000,
