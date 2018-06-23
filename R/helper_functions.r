@@ -1,7 +1,9 @@
 ##
-constraint_H_rhs_b <- function(A, b) {
+create_equality_constraint <- function(A, b) {
+    stop_if_dimensionality_names_are_missing(A)
     constr <- list(constr = rbind(A, -A), dir = rep("<=", 2 * nrow(A)), rhs = c(b,
         -b))
+    rownames(constr$constr) <- c(rownames(A), negative_string(rownames(A)))
     return(constr)
 }
 unit_cube_zoom <- function() coord_cartesian(xlim = c(0, 1), ylim = c(0, 1))
@@ -242,20 +244,21 @@ where_muscles_have_unreasonable_values <- function(df, muscle_names) {
 }
 
 constraint_H_with_bounds <- function(A, b, bounds_tuple_of_numeric) {
-    H_constraint <- constraint_H_rhs_b(A, b)
+    H_constraint <- create_equality_constraint(A, b)
     bounds <- bound_constraints_for_all_muscles(bounds_tuple_of_numeric, muscle_names=colnames(A))
-    return(mergeConstraints(H_constraint, bounds))
+    return(merge_constraints(H_constraint, bounds))
 }
 
 constraint_H_lhs_direction <- function(A, direction, bounds_tuple_of_numeric) {
-    lhs <- constraint_H_rhs_b(A, rep(0, nrow(A)))
+    lhs <- create_equality_constraint(A, rep(0, nrow(A)))
 
 }
 
-add_null_column_to_end_of_lhs <- function(constraint) {
+add_null_column_to_end_of_lhs <- function(constraint, column_name) {
     c_copy <- constraint
     output_dimensionality <- nrow(constraint$constr)
     c_copy$constr <- cbind(constraint$constr, rep(0, output_dimensionality))
+    colnames(c_copy$constr)[ncol(c_copy$constr)] <- column_name
     return(c_copy)
 }
 
@@ -266,18 +269,21 @@ stop_if_dimensionality_names_are_missing <- function(df){
     }
 }
 
+
+zeros_df <- function(nrow,ncol) data.frame(matrix(0, ncol = ncol, nrow = nrow))
+
 ##' @param A equality constraints—must have named columns and rows for input and output dimensions
 ##' @param direction the direction to generate constraints on. Must have an attr(direction, "output_dimension_names") with a string name for each dimension. same len as direction
 a_matrix_lhs_direction <- function(H_matrix, direction, bounds_tuple_of_numeric) {
+    task_lambda_colname <- "task_lambda"
     stop_if_dimensionality_names_are_missing(H_matrix)
     muscle_names <- colnames(H_matrix)
     output_dimension_names <- rownames(H_matrix)
-    A_block <- constraint_H_rhs_b(cbind(H_matrix, -direction), rep(0, nrow(H_matrix)))
+    A_block <- create_equality_constraint(cbind(H_matrix, -direction), rep(0, nrow(H_matrix)))
+    colnames(A_block$constr)[ncol(A_block$constr)] <- task_lambda_colname
     bounds_raw <- bound_constraints_for_all_muscles(bounds_tuple_of_numeric, muscle_names)
-    bounds <- add_null_column_to_end_of_lhs(bounds_raw)
-    constraint <- mergeConstraints(A_block, bounds)
-    constraint$constr_dimnames <- c(muscle_names, "task_lambda")
-    constraint$rhs_dimnames <- c(output_dimension_names, output_dimension_names %>% negative_string)
+    bounds <- add_null_column_to_end_of_lhs(bounds_raw, column_name=task_lambda_colname)
+    constraint <- merge_constraints(A_block, bounds)
     return(constraint)
 }
 ##' @see a_matrix_lhs_direction
@@ -287,6 +293,14 @@ merge_diagonal_constraints <- function(constr_A, constr_B) {
     A_dimensions <- nrow(constr_A$constr)
     B_dimensions <- nrow(constr_B$constr)
 
+}
+
+##' wrapped merge_constraints that respsects the rhs_dimnames and constr_dimnames
+merge_constraints <- function(a,b){
+    constr <- mergeConstraints(a,b)
+    constr$rhs_dimnames <- c(a$dimnames, b$dimnames)
+    constr$constr_dimnames <- a$constr_dimnames
+    return(constr)
 }
 
 har_sample <- function(constr, n_samples, thin) {
@@ -311,10 +325,10 @@ bound_constraints_for_all_muscles <- function(bounds_tuple_of_numeric, muscle_na
     res <- lapply(1:n_muscles, function(muscle_index) {
         lb <- lowerBoundConstraint(n_muscles, muscle_index, bounds_tuple_of_numeric[[muscle_index]]$lower)
         ub <- upperBoundConstraint(n_muscles, muscle_index, bounds_tuple_of_numeric[[muscle_index]]$upper)
-        return(mergeConstraints(lb, ub))
+        return(merge_constraints(lb, ub))
     }) %>% mergeConstraints
-    res$rhs_dimnames <- dcclapply(muscle_names, lb_ub_strings)
-    res$constr_dimnames <- muscle_names
+    rownames(res$constr) <- dcclapply(muscle_names, lb_ub_strings)
+    colnames(res$constr) <- muscle_names
     return(res)
 }
 
