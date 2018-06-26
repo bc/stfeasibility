@@ -135,28 +135,3 @@ test_that("we can generate and har upon each task polytope independently", {
         coord_fixed() + unit_cube_zoom() + theme_classic()
     gganimate::gganimate(p2, output_subfolder_path("points", "points.html"))
 })
-
-
-##' Output Filepath
-##' by default takes the starting working directory from the tests/testthat directory.
-##' @param out_path by default ../../output/
-##' @param filename filename of interest
-##' @return output_filepath stringpath
-output_filepath <- function(filename, out_path = "../../output") file.path(out_path,
-    filename)
-
-negative_cos <- function(...) -cos(...)
-force_cos_ramp <- function(...) negative_cos(...) * 0.5 + 0.5
-
-generate_tasks_and_corresponding_constraints <- function(H_matrix, vector_out, n_task_values,
-    cycles_per_second, cyclical_function, output_dimension_names, bounds_tuple_of_numeric) {
-    tasks <- task_time_df(fmax_task = vector_out, n_samples = n_task_values, cycles_per_second = cycles_per_second,
-        cyclical_function = cyclical_function, output_dimension_names = output_dimension_names)
-    list_of_constraints_per_task <- apply(tasks, 1, function(x) {
-        # browser()
-        a_matrix_lhs_direction(H_matrix, x[output_dimension_names], bounds_tuple_of_numeric)
-        # constraint_H_with_bounds(H_matrix, x[output_dimension_names],
-        # bounds_tuple_of_numeric)
-    })
-    return(list(tasks = tasks, constraints = list_of_constraints_per_task))
-}

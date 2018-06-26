@@ -54,13 +54,15 @@ test_that("mbm har multiconstraint", {
 })
 
 test_that("mbm har multiconstraint velocity", {
-	r <- generate_and_add_velocity_constraint(multiconstraint, 1.0, 1.0, muscle_and_lambda_indices(multiconstraint, 7)$indices_for_muscles, 7)
+	r <- generate_and_add_velocity_constraint(multiconstraint, 0.042, 0.042, muscle_and_lambda_indices(multiconstraint, 7)$indices_for_muscles, 7)%>% har_sample(1e3)
 		mbm <- microbenchmark(
-		"1e3" = {a <- r %>% har_sample(1e3); print("1/4" %>% paste(Sys.time()))},
+		"1e3" = {a <- r %>% har_sample(1e7); print("1/4" %>% paste(Sys.time()))},
 		# "1e4" 	= {b <- r %>% har_sample(1e4); print("2/4" %>% paste(Sys.time()))},
 		# "1e5" 	= {c <- r %>% har_sample(1e5); print("2/4" %>% paste(Sys.time()))},
 		times=2
+
 	)
+		browser()
 })
 
 test_that("we can generate and har upon each task polytope independently", {
