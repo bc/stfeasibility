@@ -36,7 +36,11 @@ diagonal_merge_constraint_list <- function(list_of_constraints){
 	return(var_result)
 }
 
-
+eliminate_redundant <- function(constraint_object){
+    res <- eliminateRedundant(constraint_object)
+    colnames(res$constr) <- colnames(constraint_object$constr)
+    return(res)
+}
 
 remove_labels <- function(){
     theme(axis.title.x=element_blank(),
@@ -50,11 +54,15 @@ remove_labels <- function(){
 }
 #via https://www.r-bloggers.com/creating-an-image-of-a-matrix-in-r-using-image/
 rotate <- function(x) t(apply(x, 2, rev))
+
 plot_constraint_matrix <- function(constraint) {
-    mat <- cbind(constraint$constr, constraint$rhs) %>% as.matrix %>% melt
-    tall_constraints <- mat[mat$value != 0, ]
-    tall_constraints$Var1 <- factor(tall_constraints$Var1, levels = rev(levels(tall_constraints$Var1)))
-    p <- ggplot(tall_constraints, aes(x = Var2, y = Var1)) + geom_raster(aes(fill = value)) +
+    if(is.null(rownames(constraint$constr))){
+        message('Plotting redundant-free constraint without constraint names')
+        rownames(constraint$constr) <- paste("c", 1:nrow(constraint$constr), sep="_")
+    }
+    mat <- cbind(constraint$constr, constraint$rhs) %>% melt %>% as.data.frame
+    mat$Var1 <- factor(mat$Var1, levels = rev(levels(mat$Var1)))
+    p <- ggplot(mat, aes(x = Var2, y = Var1)) + geom_raster(aes(fill = value)) +
         scale_fill_gradientn(colors = brewer.pal(11, "PRGn")) + labs(x = "input variable per timestep",
         y = "constraint", title = "Matrix") + theme_classic() + theme(axis.text.x = element_text(size = 9,
         angle = 0, vjust = 0.3), axis.text.y = element_text(size = 9), plot.title = element_text(size = 11))

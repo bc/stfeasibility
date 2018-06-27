@@ -47,16 +47,6 @@ test_that("merging constraints yields the same result as independent constraints
 	devtools::use_data(multiconstraint, overwrite=TRUE)
 })
 
-test_that("we can make a mini-H multiconstraint", {
-
-	mini_H_task_trajectory <- cos(seq(0,(pi*2), length.out=7))
-	constraint_list <- lapply(mini_H_task_trajectory, function(task_x){
-		a_matrix_lhs_direction(H_matrix_mini, direction = task_x, bounds_tuple_of_numeric_mini) 
-	})
-	second_constraint <- a_matrix_lhs_direction(H_matrix_mini, direction = c(0), bounds_tuple_of_numeric_mini) 	
-	third_constraint <- a_matrix_lhs_direction(H_matrix_mini, direction = c(1), bounds_tuple_of_numeric_mini) 
-})
-
 context("har on velocity constraint")
 test_that("mbm har multiconstraint velocity", {
 		constraint_velocity <- compose_velocity_constraint(multiconstraint, 0.042,0.042)
