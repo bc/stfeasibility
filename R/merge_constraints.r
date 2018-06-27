@@ -1,4 +1,9 @@
-
+##' Diagonally merge two constraints
+##' combines two constraints, and renames the colnames of the second constraint 
+##' to make sure they do not stack atop one another.
+##' @param first_constraint,second_constraint constraint objects with $constr, $dir, $rhs
+##' @param string_to_append_to_second_constraint string to append. i.e. a number. it will be appended after an underscore.
+##' @return constr combined constraint going down the diagonal.
 diagonal_merge_constraints <- function(first_constraint, second_constraint, string_to_append_to_second_constraint){
     first_constraint_copy <- first_constraint
     second_constraint_copy <- second_constraint
@@ -16,8 +21,11 @@ diagonal_merge_constraints <- function(first_constraint, second_constraint, stri
     return(merged_constraint)
 }
 
-
-##' @return constr combined constraint.
+##' Diagonally merge constraint list
+##' Accepts inputs of length 1, 2, to n. Respects colnames and rownames
+##' Adds iteravely to the diagonal. Performance fo current implementation is acceptable.
+##' @param list_of_constraints each a constraint, see `?hitandrun`
+##' @return constr combined constraint going down the diagonal.
 diagonal_merge_constraint_list <- function(list_of_constraints){
 	list_len <- length(list_of_constraints)
 	if (list_len == 1){
@@ -36,12 +44,19 @@ diagonal_merge_constraint_list <- function(list_of_constraints){
 	return(var_result)
 }
 
+##' Wrapped function for eliminateRedundant that preserves colnames
+##' @see eliminateRedundant
+##' @inheritParams plot_constraint_matrix
+##' @return constraint_object constraint object, with colnames but no rownames
 eliminate_redundant <- function(constraint_object){
     res <- eliminateRedundant(constraint_object)
     colnames(res$constr) <- colnames(constraint_object$constr)
     return(res)
 }
 
+##' remove labels
+##' useful for ggplot objects you want to clean up
+##' @return p ggplot object function that can be added to a ggplot object.
 remove_labels <- function(){
     theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
@@ -52,9 +67,19 @@ remove_labels <- function(){
         axis.ticks.y=element_blank()
         )
 }
-#via https://www.r-bloggers.com/creating-an-image-of-a-matrix-in-r-using-image/
+
+##' Rotate Matrix
+##' Useful when you want to visualize a matrix with image().
+##' via https://www.r-bloggers.com/creating-an-image-of-a-matrix-in-r-using-image/
+##' @param x matrix
+##' @return x_prime rotated matrix
 rotate <- function(x) t(apply(x, 2, rev))
 
+
+##' Plot constraint matrix as colorful xy plot
+##' useful for visualizing constraint matrices before and after changes
+##' @param constraint constraint object, with constr, dir, and rhs elements.
+##' return p ggplot object
 plot_constraint_matrix <- function(constraint) {
     if(is.null(rownames(constraint$constr))){
         message('Plotting redundant-free constraint without constraint names')
@@ -68,11 +93,17 @@ plot_constraint_matrix <- function(constraint) {
         angle = 0, vjust = 0.3), axis.text.y = element_text(size = 9), plot.title = element_text(size = 11))
     return(p + remove_labels())
 }
-	
 
-        compose_velocity_constraint <- function(constraint, max_allowable_increasing_tension_speed, max_allowable_decreasing_tension_speed){
-            indices_for_muscles <- muscle_and_lambda_indices(constraint, 7)$indices_for_muscles
-            num_muscles <- get_num_muscles_via_indices_for_muscles(indices_for_muscles)
-            velocity_constraint <- generate_and_add_velocity_constraint(constraint, max_allowable_increasing_tension_speed, max_allowable_decreasing_tension_speed, indices_for_muscles, num_muscles)
-            return(velocity_constraint)
-        }
+##' compose velocity constraint
+##' require a given muscle's activation to change no more than some delta between two timepoints.
+##' @param constraint constraint object as in ?hitandrun
+##' @param max_allowable_increasing_tension_speed, max_allowable_decreasing_tension_speed value between min-max of muscle activation capability that defines maximal muscle activation change.
+##' @return  velocity_constraint constraint object
+compose_velocity_constraint <- function(constraint, max_allowable_increasing_tension_speed,
+    max_allowable_decreasing_tension_speed) {
+    indices_for_muscles <- muscle_and_lambda_indices(constraint, 7)$indices_for_muscles
+    num_muscles <- get_num_muscles_via_indices_for_muscles(indices_for_muscles)
+    velocity_constraint <- generate_and_add_velocity_constraint(constraint, max_allowable_increasing_tension_speed,
+        max_allowable_decreasing_tension_speed, indices_for_muscles, num_muscles)
+    return(velocity_constraint)
+}
