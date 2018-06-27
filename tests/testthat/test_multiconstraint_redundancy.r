@@ -10,8 +10,8 @@ test_that("we can make a mini-H multiconstraint", {
 	expect_equal(nrow(mini_trajectory_constr$constr), 56)
 	# add the lambda=1 constraint:
 	mini_trajectory_lambda_constr <- mini_trajectory_constr %>% add_lambda_equality_constraint(3)
-	mini_trajectory_lambda_velocity_consr <- mini_trajectory_lambda_constr %>% generate_and_add_velocity_constraint(1,1,7)
-	mini_trajectory_constr_nonredundant <- mini_trajectory_constr %>% eliminate_redundant
+	mini_trajectory_lambda_velocity_consr <- mini_trajectory_lambda_constr %>% generate_and_add_velocity_constraint(0.5,0.5,3)
+	full_constr_mini <- mini_trajectory_lambda_velocity_consr %>% eliminate_redundant
 
 	expect_equal(ncol(mini_trajectory_constr_nonredundant$constr),length(mini_H_task_trajectory)*4)
 	expect_equal(nrow(mini_trajectory_constr_nonredundant$constr), 49)
@@ -19,10 +19,14 @@ test_that("we can make a mini-H multiconstraint", {
 
 
 	a <- plot_constraint_matrix(mini_trajectory_constr) + ggtitle("H_matrix_mini trajectory over cosine task in Fx")
-	b <- plot_constraint_matrix(mini_trajectory_constr_nonredundant) + ggtitle("redundant constraints removed")
-	redundancy_comparisons_H_mini <- arrangeGrob(grobs=list(a,b), ncol=2)
+	b <- plot_constraint_matrix(mini_trajectory_lambda_constr) + ggtitle("task lambda fixed to 1")
+	c <- plot_constraint_matrix(mini_trajectory_lambda_velocity_consr) + ggtitle("velocity_added")
+	d <- plot_constraint_matrix(mini_trajectory_constr_nonredundant) + ggtitle("redundant constraints removed")
+	redundancy_comparisons_H_mini <- arrangeGrob(grobs=list(a,b,c,d), ncol=4)
 	plot(redundancy_comparisons_H_mini)
-	points <- mini_trajectory_constr %>% har_sample(1e4)	
+	
+	points <- mini_trajectory_lambda_constr%>% eliminate_redundant %>% pb_har_sample(1e4, mc.cores=8, eliminate=FALSE)	
+	points <- mini_trajectory_constr_nonredundant %>% pb_har_sample(1e4, mc.cores=8, eliminate=FALSE)	
 
 	is_feasible(mini_trajectory_constr)
 	res <- lpsolve_muscles_for_task("min", mini_trajectory_constr, 3)

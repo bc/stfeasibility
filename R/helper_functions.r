@@ -376,6 +376,10 @@ add_lambda_equality_constraint <- function(constraint, num_muscles) {
     return(merge_constraints(constraint,full_equality_constraint$constr))
 }
 
+write_constraint_to_csv <- function(constraint_object, output_filepath){
+    write.csv(cbind(constraint_object$constr, rhs=constraint_object$rhs), output_filepath)
+}
+
 lpsolve_muscles_for_task <- function(min_or_max, constraint, num_muscles){
         task_constraint <- constraint %>% add_lambda_equality_constraint(num_muscles)
         c_in_cTx <- gen_c_in_cTx_for_lambdas(constraint, num_muscles)

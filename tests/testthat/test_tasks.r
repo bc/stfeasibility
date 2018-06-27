@@ -9,7 +9,7 @@ test_that("har datasets can be empirically culled under delta constraints", {
     har_per_task_df <- generate_task_trajectory_and_har(H_matrix = H_matrix, vector_out = fmax_info$output_vector_per_task[[1]] *
         (1 - 1e-05), n_task_values = 5, cycles_per_second = 2, cyclical_function = force_cos_ramp,
         output_dimension_names = force_dimnames, muscle_name_per_index = muscle_name_per_index,
-        bounds_tuple_of_numeric = bounds_tuple_of_numeric, num_har_samples = 10,
+        bounds_tuple_of_numeric = bounds_tuple_of_numeric, num_har_samples = 100,
         har_thin = 100)
     context("splitting by task")
     list_of_polytope_dfs <- split_by_time(har_per_task_df)

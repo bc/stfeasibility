@@ -24,10 +24,10 @@ har_sample <- function(constr, n_samples, ...) {
     return(samples %>% as.data.frame)
 }
 
-pb_har_sample <- function(constr, n_samples, mc.cores=1) {
+pb_har_sample <- function(constr, n_samples, mc.cores=1, ...) {
     samples_per_core <- shard_a_total(total=n_samples, n_shards=mc.cores)
     samples <- pbmclapply(samples_per_core, function(har_n) {
-        har_sample(constr, n_samples = har_n)
+        har_sample(constr, n_samples = har_n, ...)
     }, mc.cores = mc.cores)
     message("dcrb'ing")
     return(rbindlist(samples))

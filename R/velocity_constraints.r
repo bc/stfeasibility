@@ -65,7 +65,7 @@ combine_velocity_constraints <- function(velocity_constraint_list) {
 }
 
 set_dimnames <- function(input_df_or_mat, colnames_to_use, rownames_to_use) {
-    # Make copy
+    # Make a copy
     df_or_mat <- input_df_or_mat
     colnames(df_or_mat) <- colnames_to_use
     rownames(df_or_mat) <- rownames_to_use
