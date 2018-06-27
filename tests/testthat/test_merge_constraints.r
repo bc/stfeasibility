@@ -1,14 +1,13 @@
 context('Functions for merging constraints')
 
 test_that("spatiotemporal tunnel har is computationally tractable", {
-	r <- generate_and_add_velocity_constraint(multiconstraint, 1.0, 1.0, muscle_and_lambda_indices(multiconstraint, 7)$indices_for_muscles, 7)
+	r <- generate_and_add_velocity_constraint(multiconstraint, 1.0, 1.0, 7)
 	res <- lpsolve_force_in_dir("max", r, indices_for_muscles=muscle_and_lambda_indices(r, 7)$indices_for_muscles)	
 	global_solution <- res$raw_x_concatenated
-	evaluate_solution(r, global_solution)
+	valid <- evaluate_solution(global_solution, r)
 	point_list <- r %>% har_sample(1e1, eliminate=FALSE)
 })
 
-`
 
 test_that("two constraints can be combined without affecting one another's individual outputs", {
 	# fx_constraint
@@ -47,12 +46,16 @@ test_that("merging constraints yields the same result as independent constraints
 	devtools::use_data(multiconstraint, overwrite=TRUE)
 })
 
+
+
 context("har on velocity constraint")
 test_that("mbm har multiconstraint velocity", {
+	print('0')
 		constraint_velocity <- compose_velocity_constraint(multiconstraint, 0.042,0.042)
-		plot_constraint_matrix(constraint_velocity)
-		a <- constraint_velocity %>% har_sample(1e2); print("1/4" %>% paste(Sys.time()))
-		browser()
+		print('1')
+		c_vel <- constraint_velocity %>% eliminate_redundant
+		print('2')
+		a <- c_vel %>% har_sample(1e2, eliminate=FALSE)
 })
 
 context("har on independent constraints w/o velocity")
@@ -67,7 +70,7 @@ test_that("we can generate and har upon each task polytope independently", {
         bounds_tuple_of_numeric=bounds_tuple_of_numeric)
 
 	inequality_constraints <- diagonal_merge_constraint_list(tasks_and_constraints$constraint)
-	st_constr <- generate_and_add_velocity_constraint(inequality_constraints, 0.042, 0.040, muscle_and_lambda_indices(inequality_constraints, 7)$indices_for_muscles, 7)
+	st_constr <- generate_and_add_velocity_constraint(inequality_constraints, 0.042, 0.040, 7)
     a <- plot_constraint_matrix(st_constr)
     ggplotly(a)
     st_task_and_constraint <- list(st_constr = st_constr, tasks_and_independent_constraints = tasks_and_constraints)

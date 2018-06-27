@@ -340,10 +340,64 @@ indices_to_control<- function(constr_object, indices_for_muscles){
     return(c_in_cTx)
 }
 
+    gen_c_in_cTx_for_lambdas <- function(constraint, num_muscles){
+            indices_ml <- muscle_and_lambda_indices(constraint, num_muscles)
+        c_in_cTx <- as.integer(indices_ml$indices_for_lambdas)
+        return(c_in_cTx)
+    }
+
+compose_positive_half_of_lambda_equality_constraint <- function(constraint, num_muscles) {
+
+    c_in_cTx <- gen_c_in_cTx_for_lambdas(constraint, num_muscles)
+    lambda_indices <- -c_in_cTx + 1
+    lambda_diag <- diag(lambda_indices)
+    lambda_cols <- which(lambda_indices == 1)
+    lambda_equality_constraint <- lambda_diag[lambda_cols, ]
+    num_lambdas <- sum(lambda_indices)
+    lambda_equality_rhs <- rep(1, num_lambdas)
+    res <- list(constr = lambda_equality_constraint, dir = rep("<=", num_lambdas),
+        rhs = lambda_equality_rhs)
+    return(list(res=res, lambda_cols=lambda_cols))
+}
+
+compose_lambda_equality_constraint <- function(constraint, num_muscles) {
+    positive_half <- compose_positive_half_of_lambda_equality_constraint(constraint, num_muscles)
+    res <- positive_half$res
+    full_equality_constraint <- merge_constraints(res, negate_constraint(res))
+    lambda_colnames <- colnames(constraint$constr)[positive_half$lambda_cols]
+    colnames(full_equality_constraint$constr) <- colnames(constraint$constr)
+    rownames(full_equality_constraint$constr) <- c(lambda_colnames, negative_string(lambda_colnames))
+    return(list(constr=full_equality_constraint))
+}
+
+add_lambda_equality_constraint <- function(constraint, num_muscles) {
+    full_equality_constraint <- compose_lambda_equality_constraint(constraint,
+        num_muscles)
+    return(merge_constraints(constraint,full_equality_constraint$constr))
+}
+
+lpsolve_muscles_for_task <- function(min_or_max, constraint, num_muscles){
+        task_constraint <- constraint %>% add_lambda_equality_constraint(num_muscles)
+        c_in_cTx <- gen_c_in_cTx_for_lambdas(constraint, num_muscles)
+        lp_result <- lp(min_or_max, objective.in = c_in_cTx, const.mat = task_constraint$constr,
+        const.dir = task_constraint$dir, const.rhs = task_constraint$rhs,
+        compute.sens = 0)
+        return(lp_result)
+}
+
+##' Negate a Constraint
+##' useful for creating equality constraints. then stack this result with the original to make an equality constr.
+##' @param constraint_object constraint object as in hitandrun
+##' @param neg_constr same constraints, but all negated. The direction remains the same, as less than.
+negate_constraint <- function(constraint_object){
+    list(constr = -constraint_object$constr, dir = constraint_object$dir, rhs=-constraint_object$rhs)
+}
+
 # to get the opposite direction, change the sign of the direction.
 lpsolve_force_in_dir <- function(min_or_max, direction_constraint, indices_for_muscles, output_wrench_dimensionality=4) {
     # show interest in maximizing the lambda scaler parameter only.
     c_in_cTx <- indices_to_control(direction_constraint, indices_for_muscles)
+
     lp_result <- lp(min_or_max, objective.in = c_in_cTx, const.mat = direction_constraint$constr,
         const.dir = direction_constraint$dir, const.rhs = direction_constraint$rhs,
         compute.sens = 0)
@@ -430,4 +484,5 @@ evaluate_solution <- function(solution_vector, constraint){
     constraints_were_met <- b_hat - b <= 1e-14
     rownames(b)[which(constraints_were_met==FALSE)]
     valid_for_all_tasks <- all(constraints_were_met)
+    return(valid_for_all_tasks)
 }

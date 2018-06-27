@@ -72,7 +72,8 @@ set_dimnames <- function(input_df_or_mat, colnames_to_use, rownames_to_use) {
     return(df_or_mat)
 }
 
-generate_and_add_velocity_constraint <- function(constraint_object, max_allowable_increasing_tension_speed, max_allowable_decreasing_tension_speed, indices_for_muscles, num_muscles){
+generate_and_add_velocity_constraint <- function(constraint_object, max_allowable_increasing_tension_speed, max_allowable_decreasing_tension_speed, num_muscles){
+	indices_for_muscles <- muscle_and_lambda_indices(constraint_object, num_muscles)$indices_for_muscles
 	velocity_constraint <- generate_full_velocity_constraint(constraint_object, max_allowable_increasing_tension_speed, max_allowable_decreasing_tension_speed, indices_for_muscles, num_muscles)
 	constraint_with_velocity_requirements <- merge_constraints(constraint_object, velocity_constraint)
 	expect_equal(sum(nrow(constraint_object$constr), nrow(velocity_constraint$constr)),nrow(constraint_with_velocity_requirements$constr))

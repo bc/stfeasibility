@@ -104,6 +104,6 @@ compose_velocity_constraint <- function(constraint, max_allowable_increasing_ten
     indices_for_muscles <- muscle_and_lambda_indices(constraint, 7)$indices_for_muscles
     num_muscles <- get_num_muscles_via_indices_for_muscles(indices_for_muscles)
     velocity_constraint <- generate_and_add_velocity_constraint(constraint, max_allowable_increasing_tension_speed,
-        max_allowable_decreasing_tension_speed, indices_for_muscles, num_muscles)
+        max_allowable_decreasing_tension_speed, num_muscles)
     return(velocity_constraint)
 }

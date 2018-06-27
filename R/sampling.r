@@ -64,3 +64,33 @@ shard_a_total <- function(total, n_shards){
     sequence[1] <- sequence[1] + (total - sum(sequence))
     return(sequence)
 }
+
+
+##' Does a feasible space exist?
+##' useful so we don't har_sample on infeasible spaces.
+##' @param constraint_object constraint object as in hitandrun
+##' @return isFeasible logical, TRUE if there is a point or points to be collected.
+is_feasible <- function(constraint_object){
+    point <- tryCatch(point <- findInteriorPoint(constraint_object, homogeneous=FALSE), error=function(e) return(FALSE))
+    if (point==FALSE){
+        return(FALSE)
+    } else if (evaluate_solution(point, constraint_object)){
+        return(TRUE)
+    } else {
+        message('hitandrun package said it was feasible but it returned a solution that did not meet the constraints')
+        return(FALSE)
+    }
+}
+
+constraint_is_feasible <- function(constraint_object, num_muscles){
+        lp_res <- lpsolve_muscles_for_task("min", mini_trajectory_constr, num_muscles)
+        if (lp_res$status == 0){
+            return(TRUE)
+        } else if (lp_res$status ==2){
+            return(FALSE)
+        } else{
+            stop("The lpSolve result status was neither 0 or 2, where 0 is feasible and 2 is infeasible.")
+        }
+    }
+
+
