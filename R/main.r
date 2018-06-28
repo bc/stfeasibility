@@ -28,14 +28,6 @@ rownames(H_matrix_mini) <- "Fx"
 bounds_tuple_of_numeric_mini <- rep(list(list(lower = 0, upper = 1)), 3)
 
 
-   -0.0555    0.0085   -0.0414    0.0409    0.0609
-   -0.0520    0.0056   -0.0888    0.0309    0.0835
-    0.0053   -0.0002    0.0258   -0.0021   -0.0083
-    0.0071   -0.0037    0.0220   -0.0194   -0.0088
-    0.0362    0.0042   -0.0391    0.0022   -0.0302
-   -0.0026   -0.0143   -0.0089   -0.0882    0.0106
-    0.0395    0.0079   -0.0381    0.0450   -0.0366
-
 ##' medial is towards center of the hand
 ##' derived from culled_hand4_flex_uar_5k_clean_static_response_from_tail_100ms_mean.csv
 cadaver_5k_dataset_train4k_LRM <- function(){
