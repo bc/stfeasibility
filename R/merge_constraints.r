@@ -1,3 +1,17 @@
+##' create vector of inequalities ("<=" to match shape of constraint
+##' useful when creating an inequality from scratch.
+##' @param constr constraint matrix as in hitandrun
+##' @return dir vector of "<=" of len == nrow(constr)
+all_less_than <- function(constr) rep("<=", nrow(constr))
+
+##' Print constraint to terminal
+##' Useful for inspection. see plot_constraint_matrix for a visual representation
+##' @param constr constraint matrix as in hitandrun
+print_constraint <- function(constraint_object){
+    print(paste(nrow(constraint_object$constr),"rows (constraints)",ncol(constraint_object$constr),"cols (variables)"))
+    cbind(constraint_object$constr, dir=constraint_object$dir, rhs=constraint_object$rhs)%>% as.data.frame %>% print
+}
+
 ##' Diagonally merge two constraints
 ##' combines two constraints, and renames the colnames of the second constraint 
 ##' to make sure they do not stack atop one another.
@@ -11,13 +25,13 @@ diagonal_merge_constraints <- function(first_constraint, second_constraint, stri
     appended_second_constraint_colnames <- paste(colnames(second_constraint$constr),string_to_append_to_second_constraint, sep="_")
     dimnames(padding_for_constraint1) <- list(rownames(first_constraint$constr),appended_second_constraint_colnames)
     first_constraint_copy$constr <- cbind(first_constraint$constr, padding_for_constraint1)
-
     padding_for_constraint2 <- zeros_df(nrow(second_constraint$constr), ncol(first_constraint$constr))
     dimnames(padding_for_constraint2) <- list(rownames(second_constraint$constr),colnames(first_constraint$constr))
     lapply(list(rownames(second_constraint$constr),colnames(first_constraint$constr)),length)
     second_constraint_copy$constr <- cbind(padding_for_constraint2, second_constraint$constr)
     rownames(second_constraint_copy$constr) <- paste(rownames(second_constraint$constr),string_to_append_to_second_constraint, sep="_")
     merged_constraint <- merge_constraints(first_constraint_copy, second_constraint_copy)
+    merged_constraint$constr <- merged_constraint$constr %>% as.matrix
     return(merged_constraint)
 }
 

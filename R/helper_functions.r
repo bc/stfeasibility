@@ -247,12 +247,15 @@ stop_if_dimensionality_names_are_missing <- function(df){
 
 zeros_df <- function(nrow,ncol) data.frame(matrix(0, ncol = ncol, nrow = nrow))
 
+    wrench_and_H_dims_match<- function(H_matrix,wrench){
+    if(nrow(H_matrix) != length(wrench)){
+        stop("nrow(H matrix) must match the length of direction.")
+    }  
+    }
 ##' @param A equality constraints—must have named columns and rows for input and output dimensions
 ##' @param direction the direction to generate constraints on. Must have an attr(direction, "output_dimension_names") with a string name for each dimension. same len as direction
 a_matrix_lhs_direction <- function(H_matrix, direction, bounds_tuple_of_numeric) {
-    if(nrow(H_matrix) != length(direction)){
-        stop("nrow(H matrix) must match the length of direction.")
-    }
+    wrench_and_H_dims_match(H_matrix, direction)
     task_lambda_colname <- "task_lambda"
     stop_if_dimensionality_names_are_missing(H_matrix)
     muscle_names <- colnames(H_matrix)
@@ -262,6 +265,16 @@ a_matrix_lhs_direction <- function(H_matrix, direction, bounds_tuple_of_numeric)
     bounds_raw <- bound_constraints_for_all_muscles(bounds_tuple_of_numeric, muscle_names)
     bounds <- add_null_column_to_end_of_lhs(bounds_raw, column_name=task_lambda_colname)
     constraint <- merge_constraints(A_block, bounds)
+    return(constraint)
+}
+
+a_matrix_rhs_task <- function(H_matrix, task_wrench, bounds_tuple_of_numeric){
+    wrench_and_H_dims_match(H_matrix,task_wrench)
+    stop_if_dimensionality_names_are_missing(H_matrix)
+    muscle_names <- colnames(H_matrix)
+    bounds_raw <- bound_constraints_for_all_muscles(bounds_tuple_of_numeric, muscle_names)
+    H_equality <- create_equality_constraint(H_matrix, task_wrench)
+    constraint <- merge_constraints(H_equality, bounds_raw)
     return(constraint)
 }
 ##' @see a_matrix_lhs_direction
@@ -381,10 +394,9 @@ write_constraint_to_csv <- function(constraint_object, output_filepath){
 }
 
 lpsolve_muscles_for_task <- function(min_or_max, constraint, num_muscles){
-        task_constraint <- constraint %>% add_lambda_equality_constraint(num_muscles)
-        c_in_cTx <- gen_c_in_cTx_for_lambdas(constraint, num_muscles)
-        lp_result <- lp(min_or_max, objective.in = c_in_cTx, const.mat = task_constraint$constr,
-        const.dir = task_constraint$dir, const.rhs = task_constraint$rhs,
+        c_in_cTx <- rep(1, ncol(constraint$constr))
+        lp_result <- lp(min_or_max, objective.in = c_in_cTx, const.mat = constraint$constr,
+        const.dir = constraint$dir, const.rhs = constraint$rhs,
         compute.sens = 0)
         return(lp_result)
 }

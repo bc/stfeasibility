@@ -19,9 +19,9 @@ har_sample <- function(constr, n_samples, ...) {
     thin <- emiris_and_fisikopoulos_suggested_thin_steps(x_dimensionality)
     message(paste("har thin steps:",thin,"for dimensionality_x=",x_dimensionality, ""))
     serial_time <- har_time_estimate(constr, n_samples, thin)    
-    samples <- hitandrun(constr, n.samples=n_samples, thin=thin, ...)
+    samples <- hitandrun(constr, n.samples=n_samples, thin=thin, ...) %>% as.data.frame
     colnames(samples) <- colnames(constr$constr)
-    return(samples %>% as.data.frame)
+    return(samples)
 }
 
 pb_har_sample <- function(constr, n_samples, mc.cores=1, ...) {
@@ -29,8 +29,7 @@ pb_har_sample <- function(constr, n_samples, mc.cores=1, ...) {
     samples <- pbmclapply(samples_per_core, function(har_n) {
         har_sample(constr, n_samples = har_n, ...)
     }, mc.cores = mc.cores)
-    message("dcrb'ing")
-    return(rbindlist(samples))
+    return(rbindlist(samples)%>%as.data.frame)
 }
 
 generate_task_trajectory_and_har <- function(H_matrix, vector_out, n_task_values,
@@ -83,7 +82,7 @@ is_feasible <- function(constraint_object){
 }
 
 constraint_is_feasible <- function(constraint_object, num_muscles){
-        lp_res <- lpsolve_muscles_for_task("min", mini_trajectory_constr, num_muscles)
+        lp_res <- lpsolve_muscles_for_task("min", constraint_object, num_muscles)
         if (lp_res$status == 0){
             return(TRUE)
         } else if (lp_res$status ==2){
