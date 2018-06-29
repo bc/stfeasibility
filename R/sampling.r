@@ -48,22 +48,6 @@ generate_task_trajectory_and_har <- function(H_matrix, vector_out, n_task_values
     return(har_per_task_df)
 }
 
-##" Shard a total
-##' useful for splitting hit and run desired samples into groups of samples for parallelization
-##' @see har_sample
-##' @param total total sum of elements
-##' @param n_shards length of the output vector
-##' @return shard_nums a vector of length n_shards, which adds up to the total
-shard_a_total <- function(total, n_shards){
-    if (n_shards > total){
-        stop("too many shards requested. the total should be at least the size of the n_shards")
-    }
-    sequence <- rep(floor(total/n_shards), n_shards)
-    #add remainder to first element
-    sequence[1] <- sequence[1] + (total - sum(sequence))
-    return(sequence)
-}
-
 
 ##' Does a feasible space exist?
 ##' useful so we don't har_sample on infeasible spaces.
@@ -91,5 +75,23 @@ constraint_is_feasible <- function(constraint_object, num_muscles){
             stop("The lpSolve result status was neither 0 or 2, where 0 is feasible and 2 is infeasible.")
         }
     }
+
+
+
+# after points have been picked
+
+split_by_time <- function(df) {
+    lapply(unique(df$time), function(time_t) df[df$time == time_t, ])
+}
+
+##' emiris_and_fisikopoulos estimated mixing time
+##' useful for hit and run.  
+##' Ioannis Z Emiris and Vissarion Fisikopoulos. Efficient randomwalk
+##' methods for approximating polytope volume. arXiv preprint
+##' arXiv:1312.2873, 2013.
+##' @see har_sample
+##' @param n integer, dimensionality of the x variable in Ax=b for given system of inequalities
+##" @return p number of points to mix with during hit and run.
+emiris_and_fisikopoulos_suggested_thin_steps <- function(n) (10 + (10/n))*n
 
 

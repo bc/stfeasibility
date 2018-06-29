@@ -1,3 +1,14 @@
+##' Merge Constraints and respect rhs_dimnames and constr_dimnames
+##' wraps hitandrun::mergeConstraints to preserve component dimnames
+##' @param a,b a constraint object as in hitandrun
+##' @return ab merged constraint object
+merge_constraints <- function(a,b){
+    constr <- mergeConstraints(a,b)
+    constr$rhs_dimnames <- c(a$dimnames, b$dimnames)
+    constr$constr_dimnames <- a$constr_dimnames
+    return(constr)
+}
+
 ##' create vector of inequalities ("<=" to match shape of constraint
 ##' useful when creating an inequality from scratch.
 ##' @param constr constraint matrix as in hitandrun

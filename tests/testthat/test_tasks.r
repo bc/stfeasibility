@@ -52,23 +52,18 @@ test_that("feasible task for mini H yields valid points", {
     # Generate points without delta constraints
     expect_true(all(colMins(points) > 0))
     expect_true(all(colMaxes(points) < 1))
-    points_are_valid <- apply(points, 1, evaluate_solution, constraint=constr)
+    points_are_valid <- evaluate_solutions(points,constr)
     expect_true(all(points_are_valid))
 })
 
 test_that("har performance with fixed dimensionality", {
-    constr <- constraint_H_with_bounds(H_matrix, c(5, 0, 0, 0), bounds_tuple_of_numeric)
+    constr <- constraint_H_with_bounds(H_matrix, c(5, 0, 0, 0), bounds_tuple_of_numeric) %>% eliminate_redundant
     mbm <- microbenchmark(
-        "pb1e3" = {a <- constr %>% pb_har_sample(1e3)},
-        "pb1e4" = {a <- constr %>% pb_har_sample(1e4)},
-        "pb1e5" = {a <- constr %>% pb_har_sample(1e5)},
-        "pb1e6" = {a <- constr %>% pb_har_sample(1e6)},
-        "pb1e6" = {a <- constr %>% pb_har_sample(1e7)},
-        "1e3" = {a <- constr %>% har_sample(1e3)},
-        "1e4" = {a <- constr %>% har_sample(1e4)},
-        "1e5" = {a <- constr %>% har_sample(1e5)},
-        "1e6" = {a <- constr %>% har_sample(1e6)},
-        "1e6" = {a <- constr %>% har_sample(1e7)},
+        "pb1e3" = {a <- constr %>% pb_har_sample(1e7, mc.cores=8, eliminate=FALSE)},
+        "pb1e4" = {a <- constr %>% pb_har_sample(1e7, mc.cores=8, eliminate=FALSE)},
+        "pb1e5" = {a <- constr %>% pb_har_sample(1e7, mc.cores=8, eliminate=FALSE)},
+        "pb1e6" = {a <- constr %>% pb_har_sample(1e7, mc.cores=8, eliminate=FALSE)},
+        "pb1e7" = {a <- constr %>% pb_har_sample(1e7, mc.cores=8, eliminate=FALSE)},
         times=1
     )
 })
