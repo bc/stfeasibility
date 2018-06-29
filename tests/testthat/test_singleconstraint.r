@@ -18,13 +18,6 @@ test_that("H matrix mini can be combined and har'd successfully",{
 	muscle_solutions <- trajectory_miniH_constr %>% eliminate_redundant %>% pb_har_sample(1e4, mc.cores=8, eliminate=FALSE) %>% as.matrix 
 	expect_true(all(evaluate_solutions(muscle_solutions, trajectory_miniH_constr)))
 	
-##' useful for split_lhs_har_df_by_constraint
-stop_if_tasks_not_wholenumber <- function(num_tasks) {
-    if (num_tasks != floor(num_tasks)) {
-        stop("The number of muscles does not match up with the number of tasks in the multiconstraint")
-    }
-}
-
 	har_df_list <- split_lhs_har_df_by_constraint(muscle_solutions, trajectory_miniH_constr, 3)
 	wrench_outputs <- H_matrix_mini %*% t(muscle_solutions) %>% as.numeric
 	expect_equal(wrench_outputs, rep(1, nrow(muscle_solutions)))

@@ -137,7 +137,13 @@ compose_velocity_constraint <- function(constraint, max_allowable_increasing_ten
 
 ###########DECOMPOSITION
 
-
+    
+##' useful for split_lhs_har_df_by_constraint
+stop_if_tasks_not_wholenumber <- function(num_tasks) {
+    if (num_tasks != floor(num_tasks)) {
+        stop("The number of muscles does not match up with the number of tasks in the multiconstraint")
+    }
+}
 
 ##' derived from https://stackoverflow.com/questions/6819804/how-to-convert-a-matrix-to-a-list-of-column-vectors-in-r
 matrix_to_list_of_cols <- function(x) split(x, rep(1:ncol(x), each = nrow(x)))
