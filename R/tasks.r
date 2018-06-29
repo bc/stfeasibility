@@ -42,4 +42,3 @@ task_time_df <- function(fmax_task, n_samples, cycles_per_second, cyclical_funct
 }
 
 
-

@@ -121,4 +121,3 @@ get_unreasonable_points <- function(df, map_index_of_interest) {
     colnames(df2) <- c(map_index_of_interest, num_reachable_colname)
     return(df2)
 }
-

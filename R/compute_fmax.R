@@ -1,5 +1,6 @@
 ##' to get the opposite direction, change the sign of the direction.
-lpsolve_force_in_dir <- function(min_or_max, direction_constraint, indices_for_muscles, output_wrench_dimensionality=4) {
+lpsolve_force_in_dir <- function(min_or_max, direction_constraint, indices_for_muscles,
+    output_wrench_dimensionality = 4) {
     # show interest in maximizing the lambda scaler parameter only.
     c_in_cTx <- indices_to_control(direction_constraint, indices_for_muscles)
 
@@ -22,15 +23,18 @@ lpsolve_force_in_dir <- function(min_or_max, direction_constraint, indices_for_m
         # multiplied by -1 because we need to move the output direction back to the rhs
         -lambda_constraint_columns[lambda_indices[, i], i]
     })
-    output_vector_per_task <- compose_output_vector_per_task(num_tasks, task_directions_of_interest, lambda_values)
+    output_vector_per_task <- compose_output_vector_per_task(num_tasks, task_directions_of_interest,
+        lambda_values)
     vector_magnitude_per_task <- lapply(output_vector_per_task, function(vector_out) sqrt(sum(vector_out^2)))
     num_muscles <- get_num_muscles_via_indices_for_muscles(indices_for_muscles)
-    muscle_activation_pattern_per_task <- compose_muscle_activation_per_task(lp_result, num_muscles)
-    raw_x_concatenated <- compose_raw_x_concatenated(muscle_activation_pattern_per_task, lambda_values)
+    muscle_activation_pattern_per_task <- compose_muscle_activation_per_task(lp_result,
+        num_muscles)
+    raw_x_concatenated <- compose_raw_x_concatenated(muscle_activation_pattern_per_task,
+        lambda_values)
     output_structure <- list(total_cost = lp_result$objval, direction_per_task = task_directions_of_interest,
         muscle_activation_pattern_per_task = muscle_activation_pattern_per_task,
         lambda_values = lambda_values, output_vector_per_task = output_vector_per_task,
-        vector_magnitude_per_task = vector_magnitude_per_task,raw_x_concatenated=raw_x_concatenated)
+        vector_magnitude_per_task = vector_magnitude_per_task, raw_x_concatenated = raw_x_concatenated)
     return(output_structure)
 }
 compose_muscle_activation_per_task <- function(lp_result, num_muscles) {
@@ -45,7 +49,7 @@ compose_output_vector_per_task <- function(num_tasks, task_directions_of_interes
 }
 compose_raw_x_concatenated <- function(muscle_activation_pattern_per_task, lambda_values) {
     num_tasks <- length(muscle_activation_pattern_per_task)
-    if (num_tasks != length(lambda_values)){
+    if (num_tasks != length(lambda_values)) {
         stop("length(muscle_activation_pattern_per_task must be the same as length(lambda_values))")
     }
     x <- lapply(1:num_tasks, function(task_index) {
