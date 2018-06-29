@@ -24,21 +24,7 @@ stop_if_tasks_not_wholenumber <- function(num_tasks) {
         stop("The number of muscles does not match up with the number of tasks in the multiconstraint")
     }
 }
-##' derived from https://stackoverflow.com/questions/6819804/how-to-convert-a-matrix-to-a-list-of-column-vectors-in-r
-matrix_to_list_of_cols <- split(x, rep(1:ncol(x), each = nrow(x)))
 
-split_lhs_har_df_by_constraint <- function(har_df,multiconstraint, num_muscles) {
-    # if left hand side then we can extract task num
-    num_tasks <- ncol(multiconstraint$constr)/num_muscles
-    stop_if_tasks_not_wholenumber(num_tasks)
-    constraint_index_matrix <- matrix(1:(num_tasks*num_muscles), nrow=num_muscles)
-    hardf_list <- lapply(constraint_index_matrix%>% matrix_to_list_of_cols,function(muscle_indices) {
-    	print(muscle_indices)
-    	solutions_subset <- har_df[,muscle_indices]
-    	return(solutions_subset)
-    })
-    return(hardf_list)
-}
 	har_df_list <- split_lhs_har_df_by_constraint(muscle_solutions, trajectory_miniH_constr, 3)
 	wrench_outputs <- H_matrix_mini %*% t(muscle_solutions) %>% as.numeric
 	expect_equal(wrench_outputs, rep(1, nrow(muscle_solutions)))

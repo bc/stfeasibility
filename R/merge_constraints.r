@@ -132,3 +132,25 @@ compose_velocity_constraint <- function(constraint, max_allowable_increasing_ten
         max_allowable_decreasing_tension_speed, num_muscles)
     return(velocity_constraint)
 }
+
+
+
+###########DECOMPOSITION
+
+
+
+##' derived from https://stackoverflow.com/questions/6819804/how-to-convert-a-matrix-to-a-list-of-column-vectors-in-r
+matrix_to_list_of_cols <- function(x) split(x, rep(1:ncol(x), each = nrow(x)))
+
+split_lhs_har_df_by_constraint <- function(har_df,multiconstraint, num_muscles) {
+    # if left hand side then we can extract task num
+    num_tasks <- ncol(multiconstraint$constr)/num_muscles
+    stop_if_tasks_not_wholenumber(num_tasks)
+    constraint_index_matrix <- matrix(1:(num_tasks*num_muscles), nrow=num_muscles)
+    hardf_list <- lapply(constraint_index_matrix%>% matrix_to_list_of_cols,function(muscle_indices) {
+        print(muscle_indices)
+        solutions_subset <- har_df[,muscle_indices]
+        return(solutions_subset)
+    })
+    return(hardf_list)
+}
