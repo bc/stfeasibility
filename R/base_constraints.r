@@ -52,25 +52,6 @@ a_matrix_rhs_task <- function(H_matrix, task_wrench, bounds_tuple_of_numeric){
     return(constraint)
 }
 
-evaluate_solution <- function(solution_vector, constraint){
-    if(ncol(constraint$constr) != length(solution_vector)){
-        stop("constraint length must match solution vector length.")
-    }
-    b_hat <- constraint$constr %*% solution_vector
-    b <- constraint$rhs
-    # we check if it is smaller than 1e-14 because if we set it to 0, 
-    # we expect cases where floating point precision does not match
-    constraints_were_met <- b_hat - b <= 1e-14
-    rownames(b)[which(constraints_were_met==FALSE)]
-    valid_for_all_tasks <- all(constraints_were_met)
-    return(valid_for_all_tasks)
-}
-
-evaluate_solutions <- function(solution_per_row_df, constraint){
-    apply(solution_per_row_df,1, evaluate_solution, constraint)
-}
-
-
 ##' Negate a Constraint
 ##' useful for creating equality constraints. then stack this result with the original to make an equality constr.
 ##' @param constraint_object constraint object as in hitandrun

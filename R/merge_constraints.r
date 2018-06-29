@@ -2,45 +2,52 @@
 ##' wraps hitandrun::mergeConstraints to preserve component dimnames
 ##' @param a,b a constraint object as in hitandrun
 ##' @return ab merged constraint object
-merge_constraints <- function(a,b){
-    constr <- mergeConstraints(a,b)
+merge_constraints <- function(a, b) {
+    constr <- mergeConstraints(a, b)
     constr$rhs_dimnames <- c(a$dimnames, b$dimnames)
     constr$constr_dimnames <- a$constr_dimnames
     return(constr)
 }
 
-##' create vector of inequalities ("<=" to match shape of constraint
+##' create vector of inequalities ('<=' to match shape of constraint
 ##' useful when creating an inequality from scratch.
 ##' @param constr constraint matrix as in hitandrun
-##' @return dir vector of "<=" of len == nrow(constr)
+##' @return dir vector of '<=' of len == nrow(constr)
 all_less_than <- function(constr) rep("<=", nrow(constr))
 
 ##' Print constraint to terminal
 ##' Useful for inspection. see plot_constraint_matrix for a visual representation
 ##' @param constr constraint matrix as in hitandrun
-print_constraint <- function(constraint_object){
-    print(paste(nrow(constraint_object$constr),"rows (constraints)",ncol(constraint_object$constr),"cols (variables)"))
-    cbind(constraint_object$constr, dir=constraint_object$dir, rhs=constraint_object$rhs)%>% as.data.frame %>% print
+print_constraint <- function(constraint_object) {
+    print(paste(nrow(constraint_object$constr), "rows (constraints)", ncol(constraint_object$constr),
+        "cols (variables)"))
+    cbind(constraint_object$constr, dir = constraint_object$dir, rhs = constraint_object$rhs) %>%
+        as.data.frame %>% print
 }
 
 ##' Diagonally merge two constraints
-##' combines two constraints, and renames the colnames of the second constraint 
+##' combines two constraints, and renames the colnames of the second constraint
 ##' to make sure they do not stack atop one another.
 ##' @param first_constraint,second_constraint constraint objects with $constr, $dir, $rhs
 ##' @param string_to_append_to_second_constraint string to append. i.e. a number. it will be appended after an underscore.
 ##' @return constr combined constraint going down the diagonal.
-diagonal_merge_constraints <- function(first_constraint, second_constraint, string_to_append_to_second_constraint){
+diagonal_merge_constraints <- function(first_constraint, second_constraint, string_to_append_to_second_constraint) {
     first_constraint_copy <- first_constraint
     second_constraint_copy <- second_constraint
     padding_for_constraint1 <- zeros_df(nrow(first_constraint$constr), ncol(second_constraint$constr))
-    appended_second_constraint_colnames <- paste(colnames(second_constraint$constr),string_to_append_to_second_constraint, sep="_")
-    dimnames(padding_for_constraint1) <- list(rownames(first_constraint$constr),appended_second_constraint_colnames)
+    appended_second_constraint_colnames <- paste(colnames(second_constraint$constr),
+        string_to_append_to_second_constraint, sep = "_")
+    dimnames(padding_for_constraint1) <- list(rownames(first_constraint$constr),
+        appended_second_constraint_colnames)
     first_constraint_copy$constr <- cbind(first_constraint$constr, padding_for_constraint1)
     padding_for_constraint2 <- zeros_df(nrow(second_constraint$constr), ncol(first_constraint$constr))
-    dimnames(padding_for_constraint2) <- list(rownames(second_constraint$constr),colnames(first_constraint$constr))
-    lapply(list(rownames(second_constraint$constr),colnames(first_constraint$constr)),length)
+    dimnames(padding_for_constraint2) <- list(rownames(second_constraint$constr),
+        colnames(first_constraint$constr))
+    lapply(list(rownames(second_constraint$constr), colnames(first_constraint$constr)),
+        length)
     second_constraint_copy$constr <- cbind(padding_for_constraint2, second_constraint$constr)
-    rownames(second_constraint_copy$constr) <- paste(rownames(second_constraint$constr),string_to_append_to_second_constraint, sep="_")
+    rownames(second_constraint_copy$constr) <- paste(rownames(second_constraint$constr),
+        string_to_append_to_second_constraint, sep = "_")
     merged_constraint <- merge_constraints(first_constraint_copy, second_constraint_copy)
     merged_constraint$constr <- merged_constraint$constr %>% as.matrix
     return(merged_constraint)
@@ -51,29 +58,31 @@ diagonal_merge_constraints <- function(first_constraint, second_constraint, stri
 ##' Adds iteravely to the diagonal. Performance fo current implementation is acceptable.
 ##' @param list_of_constraints each a constraint, see `?hitandrun`
 ##' @return constr combined constraint going down the diagonal.
-diagonal_merge_constraint_list <- function(list_of_constraints){
-	list_len <- length(list_of_constraints)
-	if (list_len == 1){
-		return(list_of_constraints[[1]])
-	}
-	else if(list_len==2){
-		return(diagonal_merge_constraints(list_of_constraints[[1]], list_of_constraints[[2]],1))
-	}
-	var_result <- diagonal_merge_constraints(list_of_constraints[[1]], list_of_constraints[[2]], 1)
-	for (pair_i in seq(2,list_len-1)) {
-		var_result <- diagonal_merge_constraints(var_result, list_of_constraints[[pair_i+1]], pair_i)
-	}
+diagonal_merge_constraint_list <- function(list_of_constraints) {
+    list_len <- length(list_of_constraints)
+    if (list_len == 1) {
+        return(list_of_constraints[[1]])
+    } else if (list_len == 2) {
+        return(diagonal_merge_constraints(list_of_constraints[[1]], list_of_constraints[[2]],
+            1))
+    }
+    var_result <- diagonal_merge_constraints(list_of_constraints[[1]], list_of_constraints[[2]],
+        1)
+    for (pair_i in seq(2, list_len - 1)) {
+        var_result <- diagonal_merge_constraints(var_result, list_of_constraints[[pair_i +
+            1]], pair_i)
+    }
     var_result$constr <- var_result$constr %>% as.matrix
     var_result$dir <- var_result$dir %>% as.vector
     var_result$rhs <- var_result$rhs %>% as.vector
-	return(var_result)
+    return(var_result)
 }
 
 ##' Wrapped function for eliminateRedundant that preserves colnames
 ##' @see eliminateRedundant
 ##' @inheritParams plot_constraint_matrix
 ##' @return constraint_object constraint object, with colnames but no rownames
-eliminate_redundant <- function(constraint_object){
+eliminate_redundant <- function(constraint_object) {
     res <- eliminateRedundant(constraint_object)
     colnames(res$constr) <- colnames(constraint_object$constr)
     return(res)
@@ -82,15 +91,10 @@ eliminate_redundant <- function(constraint_object){
 ##' remove labels
 ##' useful for ggplot objects you want to clean up
 ##' @return p ggplot object function that can be added to a ggplot object.
-remove_labels <- function(){
-    theme(axis.title.x=element_blank(),
-        axis.text.x=element_blank(),
-        axis.line = element_blank(),
-        axis.ticks.x=element_blank(),
-        axis.title.y=element_blank(),
-        axis.text.y=element_blank(),
-        axis.ticks.y=element_blank()
-        )
+remove_labels <- function() {
+    theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.line = element_blank(),
+        axis.ticks.x = element_blank(), axis.title.y = element_blank(), axis.text.y = element_blank(),
+        axis.ticks.y = element_blank())
 }
 
 ##' Rotate Matrix
@@ -106,9 +110,9 @@ rotate <- function(x) t(apply(x, 2, rev))
 ##' @param constraint constraint object, with constr, dir, and rhs elements.
 ##' return p ggplot object
 plot_constraint_matrix <- function(constraint) {
-    if(is.null(rownames(constraint$constr))){
-        message('Plotting redundant-free constraint without constraint names')
-        rownames(constraint$constr) <- paste("c", 1:nrow(constraint$constr), sep="_")
+    if (is.null(rownames(constraint$constr))) {
+        message("Plotting redundant-free constraint without constraint names")
+        rownames(constraint$constr) <- paste("c", 1:nrow(constraint$constr), sep = "_")
     }
     mat <- cbind(constraint$constr, constraint$rhs) %>% melt %>% as.data.frame
     mat$Var1 <- factor(mat$Var1, levels = rev(levels(mat$Var1)))
@@ -135,9 +139,9 @@ compose_velocity_constraint <- function(constraint, max_allowable_increasing_ten
 
 
 
-###########DECOMPOSITION
+########### DECOMPOSITION
 
-    
+
 ##' useful for split_lhs_har_df_by_constraint
 stop_if_tasks_not_wholenumber <- function(num_tasks) {
     if (num_tasks != floor(num_tasks)) {
@@ -148,15 +152,23 @@ stop_if_tasks_not_wholenumber <- function(num_tasks) {
 ##' derived from https://stackoverflow.com/questions/6819804/how-to-convert-a-matrix-to-a-list-of-column-vectors-in-r
 matrix_to_list_of_cols <- function(x) split(x, rep(1:ncol(x), each = nrow(x)))
 
-split_lhs_har_df_by_constraint <- function(har_df,multiconstraint, num_muscles) {
+split_lhs_har_df_by_constraint <- function(har_df, multiconstraint, num_muscles) {
     # if left hand side then we can extract task num
     num_tasks <- ncol(multiconstraint$constr)/num_muscles
     stop_if_tasks_not_wholenumber(num_tasks)
-    constraint_index_matrix <- matrix(1:(num_tasks*num_muscles), nrow=num_muscles)
-    hardf_list <- lapply(constraint_index_matrix%>% matrix_to_list_of_cols,function(muscle_indices) {
+    constraint_index_matrix <- matrix(1:(num_tasks * num_muscles), nrow = num_muscles)
+    hardf_list <- lapply(constraint_index_matrix %>% matrix_to_list_of_cols, function(muscle_indices) {
         print(muscle_indices)
-        solutions_subset <- har_df[,muscle_indices]
+        solutions_subset <- har_df[, muscle_indices]
         return(solutions_subset)
     })
     return(hardf_list)
+}
+
+
+pair_har_solutions_df_with_constraint <- function(list_of_har_solution_dfs, list_of_constraints) {
+    constraint_solution_pairs <- lapply(1:length(list_of_constraints), function(i) {
+        return(list(constraint_object = list_of_constraints[[i]], har_solutions = list_of_har_solution_dfs[[i]]))
+    })
+    return(constraint_solution_pairs)
 }
