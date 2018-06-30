@@ -26,7 +26,9 @@ test_that("H matrix mini can be combined and har'd successfully", {
         list_of_constraints)
     expect_true(evaluate_constraint_solution_pairs(constraint_solution_pairs) %>%
         dcc %>% all)
-    wrench_outputs <- H_matrix_mini %*% t(muscle_solutions) %>% as.numeric
-    expect_equal(wrench_outputs, rep(1, nrow(muscle_solutions)))
-    expect_equal(sd(wrench_outputs), 0)
+
+    context("now try with velocity constraints")
+    trajectory_miniH_constr
+    generate_and_add_velocity_constraint(trajectory_miniH_constr, 0.5,
+    0.5, num_muscles=3)
 })

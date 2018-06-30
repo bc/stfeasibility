@@ -17,6 +17,12 @@ test_that("two constraints can be combined without affecting one another's indiv
 	merged_constraint <- diagonal_merge_constraints(first_constraint, second_constraint, "2")
 })
 
+
+test_that("velocity helper functions work", {
+	expect_equal(transition_names(c("a","b","c","d","e","f")), c("a_to_d", "b_to_e" ,"c_to_f"))
+	expect_equal(transition_names(c("a","b","c","d")), c("a_to_c", "b_to_d"))
+})
+
 context("compare independent constraints to merged constraints")
 test_that("merging constraints yields the same result as independent constraints", {
 	# fx_constraint line
