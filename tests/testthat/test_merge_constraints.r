@@ -122,3 +122,5 @@ test_that("force_cos_ramp_constraint", {
 	print(summary(mbm))
 	plot(mbm)
 })
+
+

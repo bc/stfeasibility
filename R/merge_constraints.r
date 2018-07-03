@@ -78,16 +78,6 @@ diagonal_merge_constraint_list <- function(list_of_constraints) {
     return(var_result)
 }
 
-##' Wrapped function for eliminateRedundant that preserves colnames
-##' @see eliminateRedundant
-##' @inheritParams plot_constraint_matrix
-##' @return constraint_object constraint object, with colnames but no rownames
-eliminate_redundant <- function(constraint_object) {
-    res <- eliminateRedundant(constraint_object)
-    colnames(res$constr) <- colnames(constraint_object$constr)
-    return(res)
-}
-
 ##' remove labels
 ##' useful for ggplot objects you want to clean up
 ##' @return p ggplot object function that can be added to a ggplot object.

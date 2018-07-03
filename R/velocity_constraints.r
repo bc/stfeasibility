@@ -1,5 +1,6 @@
+##' @param eliminate logical, `TRUE` by default.
 force_cos_ramp_constraint <- function(H_matrix, bounds_tuple_of_numeric, vector_out, max_allowable_increasing_tension_speed,
-    max_allowable_decreasing_tension_speed, n_task_values=100, cycles_per_second=60, cyclical_function=force_cos_ramp){
+    max_allowable_decreasing_tension_speed, n_task_values=100, cycles_per_second=60, cyclical_function=force_cos_ramp, eliminate=TRUE){
         if (n_task_values <2) stop("must be at least 3 task values for spatiotemporal constraints")
         near_maximal_task <- vector_out*(1-1e-05)
         tasks_and_constraints <- generate_tasks_and_corresponding_constraints(H_matrix=H_matrix, vector_out = near_maximal_task, n_task_values = n_task_values, cycles_per_second = cycles_per_second, cyclical_function = cyclical_function,
@@ -7,9 +8,12 @@ force_cos_ramp_constraint <- function(H_matrix, bounds_tuple_of_numeric, vector_
         num_muscles <- ncol(H_matrix)
         inequality_constraints <- diagonal_merge_constraint_list(tasks_and_constraints$constraint)
         st_constr <- generate_and_add_velocity_constraint(inequality_constraints, max_allowable_increasing_tension_speed, max_allowable_decreasing_tension_speed, num_muscles)
-        print('eliminate_redundant')
-        cleaned_constr <- st_constr %>% eliminate_redundant
-        res <- list(nonredundant_constr=cleaned_constr, tasks_and_constraints=tasks_and_constraints)
+        if(eliminate){
+            print('eliminate_redundant')
+            #overwrite original constraint with nonredundant constraint
+            st_constr <- st_constr %>% eliminate_redundant
+        }
+        res <- list(nonredundant_constr=st_constr, tasks_and_constraints=tasks_and_constraints)
         return(res)
         }
 
