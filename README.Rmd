@@ -27,6 +27,10 @@ You can install stfeasibility from github with:
 devtools::install_github("bc/stfeasibility")
 ```
 
+## Datasets to generate
+har per task for 100 tasks in force_cos_ramp in Fx distal direction, 1 Hz task frequency, 100Hz sampling frequency. constraint = 0.1/10ms == 0.1 allowable per transition. .15 for increasing.
+har per task for 100 tasks in 
+
 ## Example
 
 This is a basic example which shows you how to solve a common problem:
@@ -34,3 +38,20 @@ This is a basic example which shows you how to solve a common problem:
 ```{r example}
 ## basic example code
 ```
+
+
+timing: s.t. constr
+Unit: seconds
+```
+            expr        min         lq       mean     median         uq
+          3 task   1.902933   1.902933   1.902933   1.902933   1.902933
+          4 task   5.742951   5.742951   5.742951   5.742951   5.742951
+          5 task  14.037121  14.037121  14.037121  14.037121  14.037121
+          6 task  25.096394  25.096394  25.096394  25.096394  25.096394
+          7 task  48.550555  48.550555  48.550555  48.550555  48.550555
+ 3 task_v_constr   3.185497   3.185497   3.185497   3.185497   3.185497
+ 4 task_v_constr   9.601908   9.601908   9.601908   9.601908   9.601908
+ 5 task_v_constr  22.970029  22.970029  22.970029  22.970029  22.970029
+ 6 task_v_constr  54.821506  54.821506  54.821506  54.821506  54.821506
+ 7 task_v_constr 100.976341 100.976341 100.976341 100.976341 100.976341
+ ```

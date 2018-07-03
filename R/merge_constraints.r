@@ -172,3 +172,17 @@ pair_har_solutions_df_with_constraint <- function(list_of_har_solution_dfs, list
     })
     return(constraint_solution_pairs)
 }
+
+
+##' @param list_of_constraints the list of constraints, where the task was set (independent A matrix equality) but no velocity constraints were added.
+##' @param trajectory_constraint constraint, which *must* be result of eliminate_redundant.
+har_and_split_trajectory_constraint <- function(trajectory_constraint, list_of_constraints,
+    num_muscles, har_samples, ...) {
+    muscle_solutions <- trajectory_constraint %>% eliminate_redundant %>% pb_har_sample(har_samples, mc.cores=mc.cores, eliminate=FALSE)
+    har_df_list <- split_lhs_har_df_by_constraint(muscle_solutions, trajectory_constraint, num_muscles)
+    constraint_solution_pairs <- pair_har_solutions_df_with_constraint(har_df_list,
+        list_of_constraints)
+    expect_true(evaluate_constraint_solution_pairs(constraint_solution_pairs, ...) %>%
+        dcc %>% all)
+    return(constraint_solution_pairs)
+}

@@ -81,8 +81,6 @@ constraint_is_feasible <- function(constraint_object, num_muscles) {
     }
 }
 
-
-
 # after points have been picked
 
 split_by_time <- function(df) {
@@ -98,3 +96,26 @@ split_by_time <- function(df) {
 ##' @param n integer, dimensionality of the x variable in Ax=b for given system of inequalities
 ##' @return p number of points to mix with during hit and run.
 emiris_and_fisikopoulos_suggested_thin_steps <- function(n) (10 + (10/n)) * n
+
+trajectory_har_df_melt <- function(har_samples_df, num_muscles){
+    slice_muscle_name <- function(str, delimiter = "_") strsplit(str, delimiter)[[1]][1]
+    slice_muscle_names <- function(str_vector) sapply(str_vector%>%as.character, slice_muscle_name) %>% unname
+    slice_task_index <- function(str, delimiter = "_") strsplit(str, delimiter)[[1]][2]
+    slice_task_indices <- function(str_vector) sapply(str_vector%>%as.character, slice_task_index) %>% unname %>% as.integer
+    muscle_names <- colnames(har_samples_df)[1:num_muscles]
+    har_samples_df$muscle_trajectory <- seq(1, nrow(har_samples_df))
+    melted_st <- melt(har_samples_df, id.vars="muscle_trajectory", variable.factor = FALSE)
+    melted_st$muscle <- slice_muscle_names(melted_st$variable)
+    melted_st$task_index[melted_st$variable %in% muscle_names == FALSE] <- slice_task_indices(melted_st$variable)[melted_st$variable %in% muscle_names == FALSE]
+    melted_st$task_index[melted_st$variable %in% muscle_names == TRUE] <- 0
+    #successfully split the single variable name into two variables. Rm now-redundant column.
+    melted_st$variable <- NULL
+    colnames(melted_st) <- c("muscle_trajectory", "activation","muscle","task_index")
+    return(melted_st)
+}
+
+plot_har_trajectory <- function(melted_st){
+    p <- ggplot(melted_st, aes(task_index, activation, group=muscle_trajectory)) + geom_line() + facet_grid(~muscle)
+    p <- p + theme_classic()
+    return(p)
+}

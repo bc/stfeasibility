@@ -53,17 +53,6 @@ test_that("merging constraints yields the same result as independent constraints
 })
 
 
-
-context("har on velocity constraint")
-test_that("mbm har multiconstraint velocity", {
-	print('0')
-		constraint_velocity <- compose_velocity_constraint(multiconstraint, 0.042,0.042)
-		print('1')
-		c_vel <- constraint_velocity %>% eliminate_redundant
-		print('2')
-		a <- c_vel %>% har_sample(1e2, eliminate=FALSE)
-})
-
 context("har on independent constraints w/o velocity")
 test_that("we can generate and har upon each task polytope independently", {
     positive_fx_direction_constraint <- a_matrix_lhs_direction(H_matrix, direction = c(1,
@@ -71,14 +60,65 @@ test_that("we can generate and har upon each task polytope independently", {
     indices_for_muscles <- 1:7
     fmax_info <- lpsolve_force_in_dir("max", positive_fx_direction_constraint, indices_for_muscles)
     tasks_and_constraints <- generate_tasks_and_corresponding_constraints(H_matrix=H_matrix, vector_out = fmax_info$output_vector_per_task[[1]] *
-        (1 - 1e-05), n_task_values = 6, cycles_per_second = 2, cyclical_function = force_cos_ramp,
-        output_dimension_names = force_dimnames,
+        (1 - 1e-05), n_task_values = 5, cycles_per_second = 60, cyclical_function = force_cos_ramp,
         bounds_tuple_of_numeric=bounds_tuple_of_numeric)
 
 	inequality_constraints <- diagonal_merge_constraint_list(tasks_and_constraints$constraint)
 	st_constr <- generate_and_add_velocity_constraint(inequality_constraints, 0.042, 0.040, 7)
     a <- plot_constraint_matrix(st_constr)
-    ggplotly(a)
     st_task_and_constraint <- list(st_constr = st_constr, tasks_and_independent_constraints = tasks_and_constraints)
     devtools::use_data(st_task_and_constraint, overwrite = TRUE)
+
+        tasks_and_constraints <- generate_tasks_and_corresponding_constraints(H_matrix=H_matrix, vector_out = fmax_info$output_vector_per_task[[1]] *
+        (1 - 1e-05), n_task_values = 10, cycles_per_second = 60, cyclical_function = force_cos_ramp,
+        bounds_tuple_of_numeric=bounds_tuple_of_numeric)
+
+	inequality_constraints <- diagonal_merge_constraint_list(tasks_and_constraints$constraint)
+	st_constr <- generate_and_add_velocity_constraint(inequality_constraints, 0.042, 0.040, 7)
+    a <- plot_constraint_matrix(st_constr)
+    st_task_and_constraint <- list(st_constr = st_constr, tasks_and_independent_constraints = tasks_and_constraints)
+    devtools::use_data(st_task_and_constraint, overwrite = TRUE)
+    print(microbenchmark("50"={ b <- st_task_and_constraint[[1]] %>% eliminate_redundant}, times=1))
+    fmax_info$output_vector_per_task[[1]]
+
+	inequality_constraints <- diagonal_merge_constraint_list(tasks_and_constraints$constraint)
+	st_constr <- generate_and_add_velocity_constraint(inequality_constraints, 0.042, 0.040, 7)
+    a <- plot_constraint_matrix(st_constr)
+    st_task_and_constraint <- list(st_constr = st_constr, tasks_and_independent_constraints = tasks_and_constraints)
+    devtools::use_data(st_task_and_constraint, overwrite = TRUE)
+    mbm <- microbenchmark("100"={ 
+    	c <- st_task_and_constraint[[1]] %>% eliminate_redundant
+    },
+     times=1)
    })
+
+test_that("force_cos_ramp_constraint", {
+
+	fmax_info <- maximize_wrench(H_matrix, bounds_tuple_of_numeric, direction=c(1,0,0,0))
+	st_constr_str <- force_cos_ramp_constraint(H_matrix, bounds_tuple_of_numeric, fmax_info$output_vector_per_task[[1]], 1.0,1.0, n_task_values=10)
+	list_of_constraints <- st_constr_str[[2]]$constraints
+	 har_constraint_pairs_velocity_constrained <- har_and_split_trajectory_constraint(st_constr_str$nonredundant_constr, list_of_constraints, list_of_tasks,
+    num_muscles=ncol(H_matrix), har_samples=1e4, mc.cores=8, tol=1e-11)
+	mbm <- microbenchmark(	
+		"8 task_v_constr" = {force_cos_ramp_constraint(H_matrix, bounds_tuple_of_numeric, fmax_info$output_vector_per_task[[1]], 0.8,0.8, n_task_values=3);print('Ø')},
+		"9 task_v_constr" = {force_cos_ramp_constraint(H_matrix, bounds_tuple_of_numeric, fmax_info$output_vector_per_task[[1]], 0.8,0.8, n_task_values=4);print('Ø')},
+		"10 task_v_constr" = {force_cos_ramp_constraint(H_matrix, bounds_tuple_of_numeric, fmax_info$output_vector_per_task[[1]], 0.8,0.8, n_task_values=4);print('Ø')},
+		"11 task_v_constr" = {force_cos_ramp_constraint(H_matrix, bounds_tuple_of_numeric, fmax_info$output_vector_per_task[[1]], 0.8,0.8, n_task_values=5);print('Ø')},
+		times=1
+	)
+	print(mbm)
+	print(summary(mbm))
+	plot(mbm)
+	print('NEXT')
+
+	mbm <- microbenchmark(	
+		"12 task_v_constr" = {force_cos_ramp_constraint(H_matrix, bounds_tuple_of_numeric, fmax_info$output_vector_per_task[[1]], 0.8,0.8, n_task_values=12);print('Ø')},
+		"13 task_v_constr" = {force_cos_ramp_constraint(H_matrix, bounds_tuple_of_numeric, fmax_info$output_vector_per_task[[1]], 0.8,0.8, n_task_values=13);print('Ø')},
+		"14 task_v_constr" = {force_cos_ramp_constraint(H_matrix, bounds_tuple_of_numeric, fmax_info$output_vector_per_task[[1]], 0.8,0.8, n_task_values=14);print('Ø')},
+		"15 task_v_constr" = {force_cos_ramp_constraint(H_matrix, bounds_tuple_of_numeric, fmax_info$output_vector_per_task[[1]], 0.8,0.8, n_task_values=15);print('Ø')},
+		times=1
+	)
+	print(mbm)
+	print(summary(mbm))
+	plot(mbm)
+})
