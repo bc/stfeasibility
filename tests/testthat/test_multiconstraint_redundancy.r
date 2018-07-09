@@ -84,7 +84,7 @@ test_that("adding lambda_q", {
     plot(redundancy_comparisons_H_mini)
 
     points <- mini_trajectory_lambda_constr %>% eliminate_redundant %>% pb_har_sample(10000,
-        mc.cores = 8, eliminate = FALSE)
+        mc.cores = 8, eliminate = FALSE)g
     points <- mini_trajectory_constr_nonredundant %>% pb_har_sample(10000, mc.cores = 8,
         eliminate = FALSE)
 

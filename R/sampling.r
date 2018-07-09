@@ -27,11 +27,15 @@ har_sample <- function(constr, n_samples, ...) {
 }
 
 pb_har_sample <- function(constr, n_samples, mc.cores = 1, ...) {
+    if (!constraint_is_feasible(constr)){
+        stop("constraint_infeasible")
+    }
     samples_per_core <- shard_a_total(total = n_samples, n_shards = mc.cores)
     samples <- pbmclapply(samples_per_core, function(har_n) {
         har_sample(constr, n_samples = har_n, ...)
     }, mc.cores = mc.cores)
-    return(rbindlist(samples) %>% as.data.frame)
+    res <- rbindlist(samples) %>% as.data.frame
+    return(res)
 }
 
 generate_task_trajectory_and_har <- function(H_matrix, vector_out, n_task_values,

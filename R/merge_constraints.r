@@ -9,6 +9,22 @@ merge_constraints <- function(a, b) {
     return(constr)
 }
 
+##' Merge Constraints Recursively
+##' wraps merge_constraints and thereby hitandrun::mergeConstraints
+##' @param a,b a constraint object as in hitandrun
+##' @return ab merged constraint object
+merge_constraints_list <- function(constraints_list) {
+    # Reduce(merge_constraints, constraints_list)
+    len <- length(constraints_list)
+    if (len == 1){
+        return(constraints_list[[1]])
+    } else if (len == 2){
+        return(merge_constraints(constraints_list[[1]], constraints_list[[2]]))
+    } else {
+        return(merge_constraints(constraints_list[[1]], merge_constraints_list(constraints_list[2:len])))
+    }
+}
+
 ##' create vector of inequalities ('<=' to match shape of constraint
 ##' useful when creating an inequality from scratch.
 ##' @param constr constraint matrix as in hitandrun

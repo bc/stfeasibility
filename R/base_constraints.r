@@ -77,3 +77,17 @@ bound_constraints_for_all_muscles <- function(bounds_tuple_of_numeric, muscle_na
     colnames(res$constr) <- muscle_names
     return(res)
 }
+
+
+split_constraints <- function(constraint, n_shards){
+    n_constraints <- nrow(constraint$constr)
+    idxs <- 1:n_constraints
+    indices_per_shard <- split(idxs, cut_number(idxs, n_shards)) %>% unname
+    miniconstraints <- lapply(indices_per_shard, function(indices_for_shard){
+        res <- list(constr=constraint$constr[indices_for_shard,],
+            dir=constraint$dir[indices_for_shard],
+            rhs=constraint$rhs[indices_for_shard])
+        return(res)
+    })
+    return(miniconstraints)
+}

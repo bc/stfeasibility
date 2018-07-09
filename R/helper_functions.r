@@ -3,6 +3,7 @@ unit_cube_zoom <- function() coord_cartesian(xlim = c(0, 1), ylim = c(0, 1))
 ##' @see a_matrix_lhs_direction
 negative_string <- function(s) paste0("-", s)
 
+str1 <- function(anything) str(anything,1)
 
 
 ##' Ensure a folder exists, write if nonexistent
@@ -13,6 +14,11 @@ negative_string <- function(s) paste0("-", s)
 ensure_folder_exists <- function(mainDir, subDir) {
     ifelse(!dir.exists(file.path(mainDir, subDir)), dir.create(file.path(mainDir,
         subDir)), FALSE)
+}
+
+## via https://stackoverflow.com/questions/46085274/is-there-a-string-formatting-operator-in-r-similar-to-pythons
+`%--%` <- function(x, y) {
+  do.call(sprintf, c(list(x), y))
 }
 
 
@@ -146,3 +152,40 @@ split_into_pieces <- function(vector, slice_size) {
     }
     split(vector, seq_along(vector)/slice_size)
 }
+
+##' Bisection Method for logical '
+##'  inspiration: http://dkmathstats.com/the-bisection-method-in-r/
+##' a = lowest acceptable value
+##' b = highest acceptable value
+##' @param tol lowest allowable absolute different between lower and upper bound. will return upper bound of the two.
+##' @param f function with logical output, 1 input that a or b is plugged in.
+
+bisection_method <- function(a, b, tol, f, ...) {
+    midpt <- function(a,b) sum(b,a)*0.5
+    print_bounds <- function(a,b) print(paste("[",a,"——",b,"]"))
+    print_bounds(a,b)
+    prospective_bound <- midpt(a,b)
+    if (f(b, ...) == FALSE) {
+        stop("Upper limit is supposed to be TRUE, but was FALSE")
+    } else if(abs(b-a) < tol){
+        return(b)
+    } else if (f(prospective_bound, ...)==TRUE){
+        return(bisection_method(a, prospective_bound, tol, f))
+    } else if (f(prospective_bound, ...)==FALSE){
+        return(bisection_method(prospective_bound, b, tol, f))
+    } else if (f(a, ...) == FALSE && f(b, ...) == FALSE){
+        stop("limits are both false")
+        # we have to go deeper
+    } else {
+        print("a")
+        print(a)
+        print(f(a, ...))
+        print("b")
+        print(b)
+        print(f(b, ...))
+        stop("unknown err")
+    }
+
+}
+
+    

@@ -162,3 +162,21 @@ test_that("we can generate and har upon each task polytope independently", {
         coord_fixed() + unit_cube_zoom() + theme_classic()
     gganimate::gganimate(p2, output_subfolder_path("points", "points.html"))
 })
+
+context('full_for_task_st')
+test_that('full_ st histograms', {
+    har_n <- 1e3
+    st_constr_str <- force_cos_ramp_constraint(H_matrix, bounds_tuple_of_numeric, c(28,0,0,0), 0.5, 0.5, n_task_values = 10, cycles_per_second=10, eliminate = FALSE)
+    res <- st_constr_str$nonredundant_constr %>% eliminate_redundant
+    points_st <- res %>% pb_har_sample(har_n, mc.cores=8, eliminate=FALSE)
+    p_st <- ggplot(har_per_task_df, aes(DI, PI, frame = time)) + geom_hex(aes(group = time),
+        binwidth = c(0.05, 0.05)) + coord_fixed() + unit_cube_zoom() + theme_classic()
+    points_st$st <- factor(1, levels=c(0,1))
+    st_constr_str <- force_cos_ramp_constraint(H_matrix, bounds_tuple_of_numeric, c(28,0,0,0), 1.0, 1.0, n_task_values = 10, cycles_per_second=10, eliminate = FALSE)
+    res <- st_constr_str$nonredundant_constr %>% eliminate_redundant
+    points_no_st <- res %>% pb_har_sample(har_n, mc.cores=8, eliminate=FALSE)
+    points_no_st$st <- factor(0, levels(c(0,1)))
+
+    gganimate::gganimate(p_st, output_subfolder_path("st_vs_degenerate", "st.html"))
+
+})
