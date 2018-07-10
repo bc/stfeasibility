@@ -1,56 +1,25 @@
 context('hi')
 
-force_cos_ramp_constraint_prefilled <- function(speed_limit, vector_out = c(28.8,0,0,0)) {
-    return(force_cos_ramp_constraint(H_matrix = H_matrix, bounds_tuple_of_numeric = bounds_tuple_of_numeric,
-    vector_out = vector_out, max_allowable_increasing_tension_speed=speed_limit,max_allowable_decreasing_tension_speed=speed_limit,
-    n_task_values = 100, cycles_per_second = 60, cyclical_function = force_cos_ramp,
-    eliminate = FALSE))
-}
-force_cos_ramp_is_feasible <- function(speed_limit, ...){
-    tryCatch({
-        big_constraint <- force_cos_ramp_constraint_prefilled(speed_limit=speed_limit, ...)
-        c_is_feasible <- big_constraint$nonredundant_constr %>% constraint_is_feasible
-        return(c_is_feasible)
-    }, error = function(cond){
-        print(cond)
-        return(FALSE)
-    })
-}
-
-har_dataframe_force_cos <- function(H_matrix,bounds_tuple_of_numeric,increasing,decreasing,n_task_values, har_n, vector_out){
-    st_constr_str <- force_cos_ramp_constraint(H_matrix, bounds_tuple_of_numeric, vector_out, increasing,decreasing, n_task_values = n_task_values, cycles_per_second=10, eliminate = FALSE)
-    param_string <- paste0("n_task_values:",n_task_values,"st increasing:", increasing, "decreasing:", decreasing)
-    res <- st_constr_str$nonredundant_constr %>% eliminate_redundant_single
-    points <- res %>% har_sample(har_n, eliminate=FALSE)
-    tall_df_st <- points %>% trajectory_har_df_melt(length(bounds_tuple_of_numeric))
-    tall_df_st$st <- increasing
-    return(tall_df_st)
-}
-
 test_that('minitest', { 
     vector_out <- c(10,0,0,0)
-    smallest_feasible_speedlimit <- bisection_method(1e-8, 1.0, 1e-5, f = force_cos_ramp_is_feasible, vector_out=vector_out)
+    profvis({smallest_feasible_speedlimit <- bisection_method(1e-8, 0.25, 1e-5, f = force_cos_ramp_is_feasible, vector_out=vector_out)})
     velocity_constraint_options <- seq(smallest_feasible_speedlimit, 1.0, length.out = 1)
     har_n <- 1e3
     n_task_values <- 3
     pbmclapply(velocity_constraint_options, function(speed_limit){
         my_filename <- paste0("max_force_is_submaximal_10.0N_in_fx__n_task_values_", n_task_values, "_speed_limit_",speed_limit, "har_n_",har_n, ".csv")
-        print('starting')
-        print(my_filename)
         tall_segment <- har_dataframe_force_cos(H_matrix, bounds_tuple_of_numeric, speed_limit,speed_limit,n_task_values, har_n, vector_out)
-        print('wroteCSV')
         write.csv(tall_segment, my_filename)
         print('wrote to csv:')
         print(my_filename)
-    }, mc.cores=8)
+    }, mc.cores=8)  
 })
 
-
-skip('already done')
-test_that('very submaximal forces g789sgd/', { 
-    vector_out <- c(10,0,0,0)
-    smallest_feasible_speedlimit <- bisection_method(1e-8, 1.0, 1e-5, f = force_cos_ramp_is_feasible, vector_out=vector_out)
-    velocity_constraint_options <- seq(smallest_feasible_speedlimit, 1.0, length.out = 8)
+library(pracma)
+test_that('very submaximal forces', { 
+    profvis({vector_out <- c(10,0,0,0)
+    smallest_feasible_speedlimit <- bisection_method(1e-9, 0.10, 1e-5, f = force_cos_ramp_is_feasible, vector_out=vector_out)
+    velocity_constraint_options <- c(logseq(smallest_feasible_speedlimit, 1.0, length.out = 8),1)
     har_n <- 1e5
     n_task_values <- 20
     pbmclapply(velocity_constraint_options, function(speed_limit){
@@ -62,14 +31,14 @@ test_that('very submaximal forces g789sgd/', {
         write.csv(tall_segment, my_filename)
         print('wrote to csv:')
         print(my_filename)
-    }, mc.cores=8)
+    }, mc.cores=8)}, interval=300)
 })
-skip('already done')
-test_that('full_ st histograms_20 sd7f89/', { 
-    vector_out <- c(28.8,0,0,0)
-    smallest_feasible_speedlimit <- bisection_method(1e-8, 1.0, 1e-5, f = force_cos_ramp_is_feasible, vector_out=vector_out)
-    velocity_constraint_options <- seq(smallest_feasible_speedlimit, 1.0, length.out = 8)
 
+context('fullst 20')
+test_that('full_ st histograms_20', { 
+    profvis({vector_out <- c(28.8,0,0,0)
+    smallest_feasible_speedlimit <- bisection_method(1e-9, 10, 1e-5, f = force_cos_ramp_is_feasible, vector_out=vector_out)
+    velocity_constraint_options <- c(logseq(smallest_feasible_speedlimit, 1.0, length.out = 8),1.0)
     har_n <- 1e5
     n_task_values <- 20
     pbmclapply(velocity_constraint_options, function(speed_limit){
@@ -78,7 +47,7 @@ test_that('full_ st histograms_20 sd7f89/', {
         tall_segment <- har_dataframe_force_cos(H_matrix, bounds_tuple_of_numeric, speed_limit,speed_limit,n_task_values, har_n, vector_out)
         print('wroteCSV')
         write.csv(tall_segment, my_filename)
-    }, mc.cores=8)
+    }, mc.cores=8)}, interval=300)
 })
 
 skip('not today ')

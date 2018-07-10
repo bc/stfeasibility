@@ -54,7 +54,7 @@ wrench_names <- c("dorsal_fx","medial_fy","proximal_fz","JR3_MX","JR3_MY","JR3_M
 get_cat_H_matrix <- function(cat_mat, cat_number){
 	get_R <- function(cat_mat, cat_number) cat_mat$Cats[[cat_number]][[1]][[1]]
 	get_J <- function(cat_mat, cat_number) cat_mat$Cats[[cat_number]][[1]][[2]]
-	RFm <- get_R(cat_mat, 1) * diag(as.numeric(cats$afl95) * (cats$fmax * cats$cosa95))
+	RFm <- get_R(cat_mat, 1) * diag(as.numeric(cat_mat$afl95) * (cat_mat$fmax * cat_mat$cosa95))
 	H_matrix_cat <- get_J(cat_mat, cat_number) %*% RFm
 	cat_muscle_names <- as.character(unlist(cat_mat$muscles))
 	cat_wrench_names <- c("fx","fy","fz","mx","my","mz")

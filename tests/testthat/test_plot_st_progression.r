@@ -15,8 +15,27 @@ near_maximal_fx <- c("~/Resilio\ Sync/stfeasibility/sd7f89/n_task_values_20_spee
 "~/Resilio\ Sync/stfeasibility/sd7f89/n_task_values_20_speed_limit_0.718684608002886har_n_1e+05.csv",
 "~/Resilio\ Sync/stfeasibility/sd7f89/n_task_values_20_speed_limit_0.859342304001443har_n_1e+05.csv",
 "~/Resilio\ Sync/stfeasibility/sd7f89/n_task_values_20_speed_limit_1har_n_1e+05.csv")
+
 point_sets <- pblapply(near_maximal_fx, fread) %>% rbindlist
+point_sets$muscle <- factor(point_sets$muscle, levels = muscle_name_per_index)
 max_point_sets <- pblapply(sub_maximal_fx, fread) %>% rbindlist
+max_point_sets$muscle <- factor(max_point_sets$muscle, levels = muscle_name_per_index)
+st_vec <- c(0.156053824008658, 0.296711520007215, 0.437369216005772, 0.578026912004329,
+0.718684608002886, 0.859342304001443, 1)
+
+min_max_per_config <- max_point_sets[st %in% st_vec[c(1,length(st_vec))],.(min_a=min(activation), max_a=max(activation),median_a=median(activation)),by=.(muscle,st,task_index)]
+p <- ggplot(min_max_per_config, aes(task_index, min_a)) + geom_line() + facet_grid(st~muscle) + geom_line(aes(task_index, max_a)) + geom_line(aes(task_index,median_a))
+p <- p + geom_ribbon(aes(ymin = max_a, ymax = pmin(min_a, max_a) , fill=factor(st)))
+p <- p + geom_line(aes(task_index, median_a), col="white")
+p <- p + theme_classic() + xlab('time')
+p
+
+p <- ggplot(min_max_per_config, aes(task_index, min_a, frame=st)) + geom_line() + facet_grid(~muscle) + geom_line(aes(task_index, max_a)) + geom_line(aes(task_index,median_a))
+p <- p + geom_ribbon(aes(ymin = max_a, ymax = pmin(min_a, max_a) ),fill="black")
+p <- p + geom_line(aes(task_index, median_a), col="white")
+p <- p + theme_classic()
+gganimate::gganimate(p, output_subfolder_path("st", "st.html"), ani.width=1200, ani.height=400)
+
 test_that('A',{
 	p <- ggplot(point_sets, aes(task_index, activation, group=task_index)) + geom_boxplot(outlier.size=0.25) + facet_grid(st~muscle)
 	p <- p + theme_classic()
@@ -26,7 +45,6 @@ test_that('A',{
 	p1 <- p1 + theme_classic()
 	ggsave('maximal_set.png', p1, width=8)
 })
-
 
 a <- point_sets%>% as.data.frame
 tasks <- sort(unique(a$task_index))
