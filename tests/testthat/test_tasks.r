@@ -29,21 +29,48 @@ test_that("har datasets can be empirically culled under delta constraints", {
     expect_equal(sapply(threshold_infinitely_strict, nrow), rep(0, length(list_of_polytope_dfs)))
     medium_threshold <- rm_solutions_with_infeasible_transitions(list_of_polytope_dfs,
         muscle_name_per_index, threshold = 0.5, mc.cores = 1)
-
-
+    browser()
     # TODO ANIMATION etc/overlay <- dcrb(list_of_culled_polytope_dfs)
 })
 
-test_that("make feasible task trajectory", {
+test_that("feasible task for H yields valid points", {
     # the set of lambdas by which to scale the maximum feasible force for a given
-    # task direction.
-
+    # task direction. P=
     constr <- constraint_H_with_bounds(H_matrix, c(5, 0, 0, 0), bounds_tuple_of_numeric)
     points <- har_sample(constr, 10000)
     colnames(points) <- muscle_name_per_index
     # Generate points without delta constraints
     expect_true(all(colMins(points) > 0))
     expect_true(all(colMaxes(points) < 1))
+})
+
+test_that("feasible task for mini H yields valid points", {
+    # the set of lambdas by which to scale the maximum feasible force for a given
+    # task direction. P=
+    constr <- constraint_H_with_bounds(H_matrix_mini, c(1), bounds_tuple_of_numeric_mini)
+    points <- har_sample(constr, 10000)
+    # Generate points without delta constraints
+    expect_true(all(colMins(points) > 0))
+    expect_true(all(colMaxes(points) < 1))
+    points_are_valid <- apply(points, 1, evaluate_solution, constraint=constr)
+    expect_true(all(points_are_valid))
+})
+
+test_that("har performance with fixed dimensionality", {
+    constr <- constraint_H_with_bounds(H_matrix, c(5, 0, 0, 0), bounds_tuple_of_numeric)
+    mbm <- microbenchmark(
+        "pb1e3" = {a <- constr %>% pb_har_sample(1e3)},
+        "pb1e4" = {a <- constr %>% pb_har_sample(1e4)},
+        "pb1e5" = {a <- constr %>% pb_har_sample(1e5)},
+        "pb1e6" = {a <- constr %>% pb_har_sample(1e6)},
+        "pb1e6" = {a <- constr %>% pb_har_sample(1e7)},
+        "1e3" = {a <- constr %>% har_sample(1e3)},
+        "1e4" = {a <- constr %>% har_sample(1e4)},
+        "1e5" = {a <- constr %>% har_sample(1e5)},
+        "1e6" = {a <- constr %>% har_sample(1e6)},
+        "1e6" = {a <- constr %>% har_sample(1e7)},
+        times=1
+    )
 })
 
 test_that("we can generate force trajectory", {
@@ -116,6 +143,7 @@ test_that("output_folder paths work", {
 })
 
 skip_if_not(run_full_long_tests, message = deparse(substitute(condition)))
+
 test_that("we can generate and har upon each task polytope independently", {
     positive_fx_direction_constraint <- a_matrix_lhs_direction(H_matrix, direction = c(1,
         0, 0, 0), bounds_tuple_of_numeric)

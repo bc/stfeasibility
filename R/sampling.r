@@ -8,6 +8,9 @@ har_time_estimate <- function(constr, n_samples, thin) {
     interval <- predict(lm_fit, data.frame(x = n_samples), interval = "predict")
     plus_or_minus <- floor((interval[[3]] - interval[[2]])/2)
     message(paste0(as.character(floor(interval[[1]])), "+/-", as.character(plus_or_minus), " seconds expected for ", n_samples," har points"))
+    return(interval[[1]])
+    } else{
+        return(0.0)
     }
 }
 
@@ -15,19 +18,19 @@ har_sample <- function(constr, n_samples, ...) {
     x_dimensionality <- ncol(constr$constr)
     thin <- emiris_and_fisikopoulos_suggested_thin_steps(x_dimensionality)
     message(paste("har thin steps:",thin,"for dimensionality_x=",x_dimensionality, ""))
-    har_time_estimate(constr, n_samples, thin)
+    serial_time <- har_time_estimate(constr, n_samples, thin)    
     samples <- hitandrun(constr, n.samples=n_samples, thin=thin, ...)
     colnames(samples) <- colnames(constr$constr)
     return(samples %>% as.data.frame)
 }
 
-pb_har_sample <- function(constr, n_samples, shards = 10) {
-    samples_per_core <- n_samples/shards
-    samples <- pbmclapply(1:shards, function(i) {
-        har_sample(constr, n_samples = samples_per_core)
-    }, mc.cores = 6)
+pb_har_sample <- function(constr, n_samples, mc.cores=1) {
+    samples_per_core <- shard_a_total(total=n_samples, n_shards=mc.cores)
+    samples <- pbmclapply(samples_per_core, function(har_n) {
+        har_sample(constr, n_samples = har_n)
+    }, mc.cores = mc.cores)
     message("dcrb'ing")
-    return(dcrb(samples))
+    return(rbindlist(samples))
 }
 
 generate_task_trajectory_and_har <- function(H_matrix, vector_out, n_task_values,
@@ -42,6 +45,22 @@ generate_task_trajectory_and_har <- function(H_matrix, vector_out, n_task_values
     })
     bigL_column_labeled <- lapply(bigL_labeled, set_colnames, c(colnames(tasks_and_constraints$tasks),
         muscle_name_per_index))
-    har_per_task_df <- bigL_column_labeled %>% dcrb
+    har_per_task_df <- bigL_column_labeled %>% rbindlist
     return(har_per_task_df)
+}
+
+##" Shard a total
+##' useful for splitting hit and run desired samples into groups of samples for parallelization
+##' @see har_sample
+##' @param total total sum of elements
+##' @param n_shards length of the output vector
+##' @return shard_nums a vector of length n_shards, which adds up to the total
+shard_a_total <- function(total, n_shards){
+    if (n_shards > total){
+        stop("too many shards requested. the total should be at least the size of the n_shards")
+    }
+    sequence <- rep(floor(total/n_shards), n_shards)
+    #add remainder to first element
+    sequence[1] <- sequence[1] + (total - sum(sequence))
+    return(sequence)
 }

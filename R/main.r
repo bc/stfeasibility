@@ -19,3 +19,10 @@ H_matrix <- JR %*% diag(maximal_tension_per_muscle)
 colnames(H_matrix) <- muscle_name_per_index
 rownames(H_matrix) <- force_dimnames
 bounds_tuple_of_numeric <- rep(list(list(lower = 0, upper = 1)), length(maximal_tension_per_muscle))
+
+# Toy example for testing and illustration
+H_matrix_mini <- cbind(m0=c(3.333333333),
+      m1=c(-3.533333333),
+      m2=c(2.0))
+rownames(H_matrix_mini) <- "Fx"
+bounds_tuple_of_numeric_mini <- rep(list(list(lower = 0, upper = 1)), 3)
