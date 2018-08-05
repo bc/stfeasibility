@@ -6,12 +6,12 @@ Description: Selects points that work and removes points that don't work.
 Depends: 
 	R (>= 3.5.0),
 	lpSolve,
+	testthat,
 	devtools,
 	ggplot2,
 	hitandrun,
 	ggpubr,
 	reshape2,
-	gganimate,
 	plyr,
 	RColorBrewer,
 	plotly
