@@ -94,13 +94,13 @@ p <- ggplot(tall_df_st_and_no_st, aes(fill=st, frame=as.factor(task_index))) +  
 })
 
 
-skip('not today ')
+# skip('not today ')
 test_that('logical binary newton bisection_method works', {
     x_is_at_least_67 <- function(x) x>=67.98095181
     bisection_method(1.0,100.0,tol=1e-9,x_is_at_least_67)
 })
 
-skip('not today ')
+# skip('not today ')
 test_that('boxplot significance testing', {  
 p <- ggplot(tall_df_st_and_no_st, aes(task_index,activation,fill=st, group=task_index)) +  geom_boxplot() + facet_grid(st~muscle, space="free")
 skip('not today ')
@@ -111,7 +111,7 @@ skip('not today ')
     show(p)
 })
 
-skip('not today ')
+# skip('not today ')
 test_that('animate sample trajectories', {  
 
 p <- ggplot(tall_df_st_and_no_st, aes(task_index,activation,fill=st, group=task_index)) +  geom_boxplot() + facet_grid(st~muscle, space="free")

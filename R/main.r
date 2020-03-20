@@ -65,7 +65,7 @@ return(list(H_matrix = H_matrix_cat, bounds_tuple_of_numeric = bounds_tuple_of_n
 	)}
 
 
-mat_path <- "~/Resilio\ Sync/stfeasibility/Sohn2013_hinlimb_models.mat"
+mat_path <- "~/Documents/GitHub/bc/stfeasibility/data/Sohn2013_hinlimb_models.mat"
 library(R.matlab)
 cat_mat <- readMat(mat_path)
 cat1 <- get_cat_H_matrix(cat_mat, 1)
