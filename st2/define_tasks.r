@@ -1,3 +1,8 @@
+library(magrittr)
+library(ggplot2)
+library(data.table)
+
+source('btools.r')
 negative_cos <- function(...) -cos(...)
 force_cos_ramp <- function(...) negative_cos(...) * 0.5 + 0.5
 
@@ -12,8 +17,6 @@ generate_tasks_and_corresponding_constraints <- function(H_matrix, vector_out, n
     browser()
     return(list(tasks = tasks, constraints = list_of_constraints_per_task))
 }
-
-
 
 untimed_lambdas <- function(length.out, cyclical_function) {
     lapply(seq(0, 2 * pi, length.out = length.out), cyclical_function) %>% dcc
@@ -63,15 +66,13 @@ get_wrench_names <- function() c("dorsal_fx","medial_fy","proximal_fz","JR3_MX",
 get_muscle_name_per_index <- function() c("FDP","FDS","EIP","EDC","LUM","DI","PI")
 
 normalized_transition_forces <- function(lenout){
-    lambdas <- untimed_lambdas(lenout,force_cos_ramp)
-    m <- lapply(lambdas, function(a){distal_to_palmar_transition_lambda(a)})%>%dcrb
+    m <- lapply(untimed_lambdas(lenout,force_cos_ramp), function(a){distal_to_palmar_transition_lambda(a)})%>%dcrb
     colnames(m) <- get_wrench_names()
     m <- data.table(m)
-    m$lambda <- lambdas
-    m$time <- seq(0,199,length.out = nrow(m))
     return(m)
 }
+force_redirection_tasks <- normalized_transition_forces(100)
 
-force_redirection_tasks <- normalized_transition_forces(200)
+distal_scaling_tasks <- 
 
 

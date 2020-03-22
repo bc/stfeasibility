@@ -1,6 +1,6 @@
 ##' @param eliminate logical, `TRUE` by default.
 force_cos_ramp_constraint <- function(H_matrix, bounds_tuple_of_numeric, vector_out, max_allowable_increasing_tension_speed,
-    max_allowable_decreasing_tension_speed, n_task_values=100, cycles_per_second=60, cyclical_function=force_cos_ramp, eliminate=TRUE){
+    max_allowable_decreasing_tension_speed, n_task_values=1000, cycles_per_second=60, cyclical_function=force_cos_ramp, eliminate=TRUE){
         if (n_task_values <2) stop("must be at least 3 task values for spatiotemporal constraints")
         near_maximal_task <- vector_out*(1-1e-05)
         tasks_and_constraints <- generate_tasks_and_corresponding_constraints(H_matrix=H_matrix, vector_out = near_maximal_task, n_task_values = n_task_values, cycles_per_second = cycles_per_second, cyclical_function = cyclical_function,

@@ -1,6 +1,6 @@
 force_cos_ramp_constraint_prefilled <- function(speed_limit, vector_out = c(28.8,0,0,0)) {
     return(force_cos_ramp_constraint(H_matrix = H_matrix, bounds_tuple_of_numeric = bounds_tuple_of_numeric,
-    vector_out = vector_out, max_allowable_increasing_tension_speed=speed_limit,max_allowable_decreasing_tension_speed=speed_limit,
+    vector_out = vector_out, max_allowable_increasing_tension_speed=speed_limit, max_allowable_decreasing_tension_speed=speed_limit,
     n_task_values = 100, cycles_per_second = 60, cyclical_function = force_cos_ramp,
     eliminate = FALSE))
 }
@@ -26,3 +26,4 @@ har_dataframe_force_cos <- function(H_matrix,bounds_tuple_of_numeric,increasing,
     tall_df_st$st <- increasing
     return(tall_df_st)
 }
+
