@@ -7,10 +7,12 @@ create_equality_constraint <- function(A, b) {
 }
 
 
-constraint_H_with_bounds <- function(A, b, bounds_tuple_of_numeric) {
+constraint_H_with_bounds <- function(A, b, bounds_tuple_of_numeric, num_muscles=NULL) {
     H_constraint <- create_equality_constraint(A, b)
     bounds <- bound_constraints_for_all_muscles(bounds_tuple_of_numeric, muscle_names=colnames(A))
-    return(merge_constraints(H_constraint, bounds))
+    comb <- merge_constraints(H_constraint, bounds)
+    comb$constr <- as.matrix(comb$constr)
+    return(comb)
 }
 
 constraint_H_lhs_direction <- function(A, direction, bounds_tuple_of_numeric) {

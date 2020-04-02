@@ -9,7 +9,6 @@ generate_tasks_and_corresponding_constraints <- function(H_matrix, vector_out, n
     list_of_constraints_per_task <- apply(tasks, 1, function(x) {
         a_matrix_rhs_task(H_matrix, task_wrench=x[output_dimension_names], bounds_tuple_of_numeric)
     })
-    browser()
     return(list(tasks = tasks, constraints = list_of_constraints_per_task))
 }
 
@@ -59,19 +58,45 @@ distal_to_palmar_transition_lambda <- function(lambda){
     return(distal_to_palmar_transition_coord_normalized(lambda * pi/2))
 }
 
-get_wrench_names <- function() c("dorsal_fx","medial_fy","proximal_fz","JR3_MX","JR3_MY","JR3_MZ")
-get_muscle_name_per_index <- function() c("FDP","FDS","EIP","EDC","LUM","DI","PI")
-
 normalized_transition_forces <- function(lenout){
     lambdas <- untimed_lambdas(lenout,force_cos_ramp)
     m <- lapply(lambdas, function(a){distal_to_palmar_transition_lambda(a)})%>%dcrb
     colnames(m) <- get_wrench_names()
     m <- data.table(m)
     m$lambda <- lambdas
-    m$time <- seq(0,199,length.out = nrow(m))
+    m$time <- seq(0,0.199,length.out = nrow(m))
+    setcolorder(m, c("time","lambda",get_wrench_names()))
     return(m)
 }
 
-force_redirection_tasks <- normalized_transition_forces(200)
 
+generate_task_csvs_for_cat <- function(steps=200, task_magnitude=1){
+    redirection_tasks <- normalized_transition_forces(steps)
+    task_A <- task_time_df(c(0.0,0.0,-1.0*task_magnitude,0.0,0.0,0.0), steps, 2, force_cos_ramp,get_wrench_names())
+    task_B <- task_time_df(c(-1.0*task_magnitude,0.0,0.0,0.0,0.0,0.0), steps, 2, force_cos_ramp,get_wrench_names())
 
+    # match time manually
+    task_A$time <- redirection_tasks$time
+    task_B$time <- redirection_tasks$time
+
+    write.csv(task_A,'output/task_A.csv', row.names=FALSE)
+    write.csv(task_B,'output/task_B.csv', row.names=FALSE)
+    write.csv(redirection_tasks,'output/redirection_tasks.csv', row.names=FALSE)
+
+    task_palette <- rbindlist(list(task_A,task_B,redirection_tasks),id=TRUE)
+    task_plot <- ggplot(task_palette[seq(1, nrow(task_palette), by=2)], aes(dorsal_fx,proximal_fz,frame=time,col=as.factor(.id))) + geom_point(size=10,alpha=0.5) + coord_fixed() + theme_classic()
+    fig <- ggplotly(task_plot)
+    fig <- fig %>% 
+      animation_opts(
+        1, redraw = FALSE
+      )
+    fig
+}
+
+generate_tasks_and_corresponding_constraints_via_df <- function(H_matrix, tasks, bounds_tuple_of_numeric) {
+    output_dimension_names <- rownames(H_matrix)
+    list_of_constraints_per_task <- apply(tasks, 1, function(x) {
+        a_matrix_rhs_task(H_matrix, task_wrench=x[output_dimension_names], bounds_tuple_of_numeric)
+    })
+    return(list(tasks = tasks, constraints = list_of_constraints_per_task))
+}

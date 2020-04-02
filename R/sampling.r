@@ -62,11 +62,13 @@ generate_task_trajectory_and_har <- function(H_matrix, vector_out, n_task_values
 ##' @param constraint_object constraint object as in hitandrun
 ##' @return isFeasible logical, TRUE if there is a point or points to be collected.
 is_feasible <- function(constraint_object) {
+
+
     point <- tryCatch(point <- findInteriorPoint(constraint_object, homogeneous = FALSE),
-        error = function(e) return(FALSE))
+        error = function(e) {print(e);return(FALSE)})
     if (point == FALSE) {
         return(FALSE)
-    } else if (evaluate_solution(point, constraint_object)) {
+    } else if (evaluate_solution(point, constraint_object,0.01)) {
         return(TRUE)
     } else {
         message("hitandrun package said it was feasible but it returned a solution that did not meet the constraints")

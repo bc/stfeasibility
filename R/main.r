@@ -1,5 +1,5 @@
 load_all("~/Documents/GitHub/bc/frontiers2017")
-source('helper_functions.r')
+source('R/helper_functions.r')
 la <- load_all
 te <- test
 atp <- auto_test_package
@@ -46,7 +46,9 @@ wrench_names <- c("dorsal_fx","medial_fy","proximal_fz","JR3_MX","JR3_MY","JR3_M
 	rownames(lrm_model_of_tension_transduction) <- wrench_names
 	bias_on_wrench <- c(0.30017,-0.034335,0.17062,-0.26764,-0.40899,-0.014565)
 	names(bias_on_wrench) <- wrench_names
-	bounds_tuple_of_numeric <- rep(list(list(lower = 0, upper = 10)), length(muscle_name_per_index))
+	# bounds_tuple_of_numeric <- rep(list(list(lower = 0, upper = 10)), length(muscle_name_per_index))
+	# browser()
+	bounds_tuple_of_numeric <- lapply(c(123, 219, 23.52, 91.74, 21.6, 124.8, 129.6),function(x) {list(lower = 0, upper = x)})
 	return(list(H_matrix=lrm_model_of_tension_transduction, wrench_bias=bias_on_wrench, bounds_tuple_of_numeric=bounds_tuple_of_numeric))
 }
 

@@ -1,4 +1,4 @@
-TODO: cal invite
+make TODO: cal invite
 
 
 # stfeasibility
@@ -21,9 +21,12 @@ comparisons:
 	compare 10k from degenerate vs velocity-constrained to get the % remaining solutions.
 
 
+Hongchul Sohn / Nichols/Birckholder - Cat hindlimb
+Matt Tresch - Rat hindlimb model
 
 Largest 30 degree cone (go around those parts)
 
+--------------
 
 0 torques
 

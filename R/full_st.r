@@ -26,4 +26,3 @@ har_dataframe_force_cos <- function(H_matrix,bounds_tuple_of_numeric,increasing,
     tall_df_st$st <- increasing
     return(tall_df_st)
 }
-
