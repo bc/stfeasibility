@@ -1,8 +1,7 @@
-create_equality_constraint <- function(A, b) {
-    stop_if_dimensionality_names_are_missing(A)
-    constr <- list(constr = rbind(A, -A), dir = rep("<=", 2 * nrow(A)), rhs = c(b,
-        -b))
-    rownames(constr$constr) <- c(rownames(A), negative_string(rownames(A)))
+create_equality_constraint <- function(A_mat, b_vec) {
+    stop_if_dimensionality_names_are_missing(A_mat)
+    constr <- list(constr = rbind(A_mat, -A_mat), dir = rep("<=", 2 * nrow(A_mat)), rhs = c(b_vec,-1*b_vec))
+    rownames(constr$constr) <- c(rownames(A_mat), negative_string(rownames(A_mat)))
     return(constr)
 }
 
@@ -44,12 +43,13 @@ a_matrix_lhs_direction <- function(H_matrix, direction, bounds_tuple_of_numeric)
     return(constraint)
 }
 
-a_matrix_rhs_task <- function(H_matrix, task_wrench, bounds_tuple_of_numeric){
-    wrench_and_H_dims_match(H_matrix,task_wrench)
-    stop_if_dimensionality_names_are_missing(H_matrix)
-    muscle_names <- colnames(H_matrix)
+a_matrix_rhs_task <- function(H_matrix_input, task_wrench, bounds_tuple_of_numeric){
+    wrench_and_H_dims_match(H_matrix_input,task_wrench)
+    stop_if_dimensionality_names_are_missing(H_matrix_input)
+    muscle_names <- colnames(H_matrix_input)
     bounds_raw <- bound_constraints_for_all_muscles(bounds_tuple_of_numeric, muscle_names)
-    H_equality <- create_equality_constraint(H_matrix, task_wrench)
+    
+    H_equality <- create_equality_constraint(H_matrix_input, task_wrench)
     constraint <- merge_constraints(H_equality, bounds_raw)
     return(constraint)
 }

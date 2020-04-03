@@ -7,7 +7,7 @@ generate_tasks_and_corresponding_constraints <- function(H_matrix, vector_out, n
     tasks <- task_time_df(fmax_task = vector_out, n_samples = n_task_values, cycles_per_second = cycles_per_second,
         cyclical_function = cyclical_function, output_dimension_names = output_dimension_names)
     list_of_constraints_per_task <- apply(tasks, 1, function(x) {
-        a_matrix_rhs_task(H_matrix, task_wrench=x[output_dimension_names], bounds_tuple_of_numeric)
+        a_matrix_rhs_task(H_matrix, task_wrench=as.numeric(x[output_dimension_names]), bounds_tuple_of_numeric)
     })
     return(list(tasks = tasks, constraints = list_of_constraints_per_task))
 }
@@ -44,12 +44,12 @@ task_time_df <- function(fmax_task, n_samples, cycles_per_second, cyclical_funct
 # palmar <- c(-10.0,0.0,0.0,0.0,0.0,0.0)
 distal_to_palmar_transition_coord_normalized <- function(theta) {
     if(theta < 0){
-        stop("Bad input theta, was negative")
+        stop("Bad input theta, was lower than pi")
     }
     if(theta > pi/2){
-        stop("Bad input theta, was too big; above pi/2")
+        stop("Bad input theta, was too big; above 3pi/2")
     }
-    output <- c(-sin(theta),0.0,-cos(theta),0.0,0.0,0.0)
+    output <- c(-sin(theta),-cos(theta),0.0,0.0,0.0,0.0)
     return(output)
 }
 
@@ -57,10 +57,22 @@ distal_to_palmar_transition_coord_normalized <- function(theta) {
 distal_to_palmar_transition_lambda <- function(lambda){
     return(distal_to_palmar_transition_coord_normalized(lambda * pi/2))
 }
+get_wrench_names <- function(){
+    return(c(
+"x",
+"y",
+"z",
+"tx",
+"ty",
+"tz"
+        ))
+}
+
 
 normalized_transition_forces <- function(lenout){
     lambdas <- untimed_lambdas(lenout,force_cos_ramp)
-    m <- lapply(lambdas, function(a){distal_to_palmar_transition_lambda(a)})%>%dcrb
+    
+    m <- lapply(lambdas, function(a){distal_to_palmar_transition_lambda(1-a)})%>%dcrb
     colnames(m) <- get_wrench_names()
     m <- data.table(m)
     m$lambda <- lambdas
@@ -72,31 +84,43 @@ normalized_transition_forces <- function(lenout){
 
 generate_task_csvs_for_cat <- function(steps=200, task_magnitude=1){
     redirection_tasks <- normalized_transition_forces(steps)
-    task_A <- task_time_df(c(0.0,0.0,-1.0*task_magnitude,0.0,0.0,0.0), steps, 2, force_cos_ramp,get_wrench_names())
-    task_B <- task_time_df(c(-1.0*task_magnitude,0.0,0.0,0.0,0.0,0.0), steps, 2, force_cos_ramp,get_wrench_names())
+    redirection_tasks$x <-  redirection_tasks$x * task_magnitude
+    redirection_tasks$y <- redirection_tasks$y * task_magnitude
+    
+    # currently negative x which is backwards
+    task_A <- task_time_df(c(-1.0 * task_magnitude,0.0,0.0,0.0,0.0,0.0), steps, 2, force_cos_ramp, get_wrench_names())
+    # currently positive y which is up
+    task_B <- task_time_df(c(0.0,-1.0 * task_magnitude,0.0,0.0,0.0,0.0), steps, 2, force_cos_ramp, get_wrench_names())
 
-    # match time manually
+    # Match time manually
     task_A$time <- redirection_tasks$time
     task_B$time <- redirection_tasks$time
+
+    task_A$id <-"taskA"
+    task_B$id <- "taskB"
+    redirection_tasks$id <- "redirection_A_to_B"
 
     write.csv(task_A,'output/task_A.csv', row.names=FALSE)
     write.csv(task_B,'output/task_B.csv', row.names=FALSE)
     write.csv(redirection_tasks,'output/redirection_tasks.csv', row.names=FALSE)
 
-    task_palette <- rbindlist(list(task_A,task_B,redirection_tasks),id=TRUE)
-    task_plot <- ggplot(task_palette[seq(1, nrow(task_palette), by=2)], aes(dorsal_fx,proximal_fz,frame=time,col=as.factor(.id))) + geom_point(size=10,alpha=0.5) + coord_fixed() + theme_classic()
+    if(steps >50){
+    task_palette <- rbindlist(list(task_A,task_B,redirection_tasks),id=FALSE)
+    task_plot <- ggplot(task_palette, aes(x,y,frame=time,col=as.factor(id))) + geom_point(size=8,alpha=0.4) + coord_fixed() + theme_classic()
     fig <- ggplotly(task_plot)
     fig <- fig %>% 
       animation_opts(
         1, redraw = FALSE
       )
     fig
+    }
 }
 
-generate_tasks_and_corresponding_constraints_via_df <- function(H_matrix, tasks, bounds_tuple_of_numeric) {
-    output_dimension_names <- rownames(H_matrix)
+generate_tasks_and_corresponding_constraints_via_df <- function(H_matrix_input, tasks, bounds_tuple_of_numeric) {
+    output_dimension_names <- rownames(H_matrix_input)
     list_of_constraints_per_task <- apply(tasks, 1, function(x) {
-        a_matrix_rhs_task(H_matrix, task_wrench=x[output_dimension_names], bounds_tuple_of_numeric)
+        a_matrix_rhs_task(H_matrix_input, task_wrench=x[output_dimension_names], bounds_tuple_of_numeric)
     })
     return(list(tasks = tasks, constraints = list_of_constraints_per_task))
 }
+

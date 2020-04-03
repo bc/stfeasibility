@@ -82,6 +82,7 @@ diagonal_merge_constraint_list <- function(list_of_constraints) {
         return(diagonal_merge_constraints(list_of_constraints[[1]], list_of_constraints[[2]],
             1))
     }
+    browser()
     var_result <- diagonal_merge_constraints(list_of_constraints[[1]], list_of_constraints[[2]],
         1)
     for (pair_i in seq(2, list_len - 1)) {

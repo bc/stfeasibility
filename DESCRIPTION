@@ -14,8 +14,7 @@ Depends:
 	gganimate,
 	plyr,
 	RColorBrewer,
-	plotly,
-	profvis
+	plotly
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
