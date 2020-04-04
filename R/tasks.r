@@ -110,7 +110,7 @@ generate_task_csvs_for_cat <- function(steps=200, task_magnitude=1){
 
     write.csv(task_A,'output/task_A.csv', row.names=FALSE)
     write.csv(task_B,'output/task_B.csv', row.names=FALSE)
-    write.csv(redirection_tasks,'output/redirection_tasks.csv', row.names=FALSE)
+    write.csv(redirection_tasks,'output/task_A_to_B.csv', row.names=FALSE)
 
     if(steps >50){
     task_palette <- rbindlist(list(task_A,task_B,redirection_tasks),id=FALSE)

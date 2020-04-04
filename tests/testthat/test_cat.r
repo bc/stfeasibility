@@ -11,11 +11,11 @@ cat1 <- get_cat_H_matrix(cat_mat, 1)
 
 taskdf <- fread('output/task_A.csv')
 # TODO debug issue of Error in -b_vec : invalid argument to unary operator
-taskdf$y  <- as.numeric(taskdf$y)
-taskdf$z  <- as.numeric(taskdf$z)
-taskdf$tx <- as.numeric(taskdf$tx)
-taskdf$ty <- as.numeric(taskdf$ty)
-taskdf$tz <- as.numeric(taskdf$tz)
+# taskdf$y  <- as.numeric(taskdf$y)
+# taskdf$z  <- as.numeric(taskdf$z)
+# taskdf$tx <- as.numeric(taskdf$tx)
+# taskdf$ty <- as.numeric(taskdf$ty)
+# taskdf$tz <- as.numeric(taskdf$tz)
 const1 <- generate_tasks_and_corresponding_constraints_via_df(cat1$H_matrix, taskdf, cat1$bounds_tuple_of_numeric)
 
 
