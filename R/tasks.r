@@ -17,7 +17,15 @@ generate_tasks_and_corresponding_constraints <- function(H_matrix, vector_out, n
 untimed_lambdas <- function(length.out, cyclical_function) {
     lapply(seq(0, 2 * pi, length.out = length.out), cyclical_function) %>% dcc
 }
+super_la <- function(){
+    rm(list = ls()); load_all()
+}
 
+library(boot)
+library(R.matlab)
+wideScreen <- function(howWide=Sys.getenv("COLUMNS")) {
+  options(width=as.integer(howWide))
+}
 ##' @param cycles_per_second in Hz.
 lambda_task_time_df <- function(n_samples, cycles_per_second, cyclical_function) {
     lambdas <- untimed_lambdas(n_samples, cyclical_function)
@@ -119,7 +127,8 @@ generate_task_csvs_for_cat <- function(steps=200, task_magnitude=1){
 generate_tasks_and_corresponding_constraints_via_df <- function(H_matrix_input, tasks, bounds_tuple_of_numeric) {
     output_dimension_names <- rownames(H_matrix_input)
     list_of_constraints_per_task <- apply(tasks, 1, function(x) {
-        a_matrix_rhs_task(H_matrix_input, task_wrench=x[output_dimension_names], bounds_tuple_of_numeric)
+        relevant_wrench <- as.numeric(x[output_dimension_names])
+        a_matrix_rhs_task(H_matrix_input, task_wrench=relevant_wrench, bounds_tuple_of_numeric)
     })
     return(list(tasks = tasks, constraints = list_of_constraints_per_task))
 }
