@@ -1,5 +1,6 @@
 ##' Merge Constraints and respect rhs_dimnames and constr_dimnames
 ##' wraps hitandrun::mergeConstraints to preserve component dimnames
+##" only stacks them
 ##' @param a,b a constraint object as in hitandrun
 ##' @return ab merged constraint object
 merge_constraints <- function(a, b) {
@@ -48,23 +49,20 @@ print_constraint <- function(constraint_object) {
 ##' @param string_to_append_to_second_constraint string to append. i.e. a number. it will be appended after an underscore.
 ##' @return constr combined constraint going down the diagonal.
 diagonal_merge_constraints <- function(first_constraint, second_constraint, string_to_append_to_second_constraint) {
-    first_constraint_copy <- first_constraint
-    second_constraint_copy <- second_constraint
-    padding_for_constraint1 <- zeros_df(nrow(first_constraint$constr), ncol(second_constraint$constr))
-    appended_second_constraint_colnames <- paste(colnames(second_constraint$constr),
-        string_to_append_to_second_constraint, sep = "_")
-    dimnames(padding_for_constraint1) <- list(rownames(first_constraint$constr),
-        appended_second_constraint_colnames)
-    first_constraint_copy$constr <- cbind(first_constraint$constr, padding_for_constraint1)
-    padding_for_constraint2 <- zeros_df(nrow(second_constraint$constr), ncol(first_constraint$constr))
-    dimnames(padding_for_constraint2) <- list(rownames(second_constraint$constr),
-        colnames(first_constraint$constr))
-    lapply(list(rownames(second_constraint$constr), colnames(first_constraint$constr)),
-        length)
-    second_constraint_copy$constr <- cbind(padding_for_constraint2, second_constraint$constr)
-    rownames(second_constraint_copy$constr) <- paste(rownames(second_constraint$constr),
-        string_to_append_to_second_constraint, sep = "_")
-    merged_constraint <- merge_constraints(first_constraint_copy, second_constraint_copy)
+    bb <- Matrix::bdiag(first_constraint$constr,second_constraint$constr) %>% as.matrix
+    muscles_with_suffix <- paste(colnames(second_constraint$constr),string_to_append_to_second_constraint, sep = "_")
+    constraintrows_with_suffix <- paste(rownames(second_constraint$constr),string_to_append_to_second_constraint, sep = "_")
+    global_colnames <- c(colnames(first_constraint$constr), muscles_with_suffix)
+    colnames(bb) <- global_colnames
+    rownames(bb) <- c(rownames(first_constraint$constr),rownames(second_constraint$constr))
+    
+    c1_height <- nrow(first_constraint$constr)
+    first_constraint$constr <- bb[1:c1_height,]
+    second_constraint$constr <- bb[(c1_height+1):nrow(bb),]
+
+    rownames(second_constraint$constr) <- constraintrows_with_suffix
+
+    merged_constraint <- merge_constraints(first_constraint, second_constraint)
     merged_constraint$constr <- merged_constraint$constr %>% as.matrix
     return(merged_constraint)
 }
@@ -82,7 +80,6 @@ diagonal_merge_constraint_list <- function(list_of_constraints) {
         return(diagonal_merge_constraints(list_of_constraints[[1]], list_of_constraints[[2]],
             1))
     }
-    browser()
     var_result <- diagonal_merge_constraints(list_of_constraints[[1]], list_of_constraints[[2]],
         1)
     for (pair_i in seq(2, list_len - 1)) {
