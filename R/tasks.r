@@ -122,6 +122,10 @@ generate_task_csvs_for_cat <- function(steps=200, task_magnitude=1){
       )
     fig
     }
+    LL <- list(task_A=task_A,
+task_B=task_B,
+redirection_tasks=redirection_tasks)
+    return(LL)
 }
 
 generate_tasks_and_corresponding_constraints_via_df <- function(H_matrix_input, tasks, bounds_tuple_of_numeric) {

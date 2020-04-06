@@ -1,56 +1,59 @@
 
 wideScreen()
-# generate_task_csvs_for_cat(100,1)
-source('R/base_constraints.r')
-source('R/tasks.r')
-
-mat_path <- "~/Documents/GitHub/bc/stfeasibility/data/Sohn2013_hinlimb_models.mat"
-cat_mat <- readMat(mat_path)
-cat1 <- get_cat_H_matrix(cat_mat, 1)
+task_definitions <- generate_task_csvs_for_cat(9,5)
+const_A <- generate_tasks_and_corresponding_constraints_via_df(cat1$H_matrix, task_definitions$task_A, cat1$bounds_tuple_of_numeric)
+const_B <- generate_tasks_and_corresponding_constraints_via_df(cat1$H_matrix, task_definitions$task_B, cat1$bounds_tuple_of_numeric)
+const_C <- generate_tasks_and_corresponding_constraints_via_df(cat1$H_matrix, task_definitions$redirection_tasks, cat1$bounds_tuple_of_numeric)
 
 
-taskdf <- fread('output/task_A.csv')
-# TODO debug issue of Error in -b_vec : invalid argument to unary operator
-# taskdf$y  <- as.numeric(taskdf$y)
-# taskdf$z  <- as.numeric(taskdf$z)
-# taskdf$tx <- as.numeric(taskdf$tx)
-# taskdf$ty <- as.numeric(taskdf$ty)
-# taskdf$tz <- as.numeric(taskdf$tz)
-const1 <- generate_tasks_and_corresponding_constraints_via_df(cat1$H_matrix, taskdf, cat1$bounds_tuple_of_numeric)
+p_per_A <- pbmclapply(const_A$constraints,har_sample,10000, mc.cores=8)
+p_per_B <- pbmclapply(const_B$constraints,har_sample,10000, mc.cores=8)
+p_per_C <- pbmclapply(const_C$constraints,har_sample,10000, mc.cores=8)
+
+every_solution_is_ind_valid(p_per_A, const_A$constraints)
+# see if the solutions actually meet the constraints:
+every_solution_is_ind_valid <- function(soln_df_list, constraints_list){
+
+ress <- all(lapply(1:length(soln_df_list), function (i){
+	return(
+		all(evaluate_solutions(soln_df_list[[i]], constraints_list[[i]], tol=1e-4))
+		)
+	})%>%dcc)
+return(ress)
+}
+# they do!
 
 
 
 nulltask <- const1$constraints[[1]]
 muscle_bounds <- get_muscle_bounds_for_rhs_task(nulltask)
-bigg <- diagonal_merge_constraint_list(const1$constraints[1:2])
-
-bigg_e <- eliminate_redundant(bigg)
-rr1 <- bigg %>% har_sample(100)
-
-bigg <- diagonal_merge_constraint_list(const1$constraints[1])
-rr2 <- bigg%>% har_sample(100)
+get_muscle_bounds_for_rhs_task(nulltask)
 
 
-diagonal_merge_constraints(seg1,const1$constraints[[3]],3)
+nored <- pbmclapply(const1$constraints, eliminate_redundant)
+nonred_then_diag <- diagonal_merge_constraint_list(nored)
 
-# pbmclapply(seq(1, length(const1$constraints)), function(x) {
-# 	tic = Sys.time()
-# 	points <- const1$constraints[[x]] %>% har_sample(1e5)
-# 	fwrite(points,paste0("A/",Sys.time(),"_index_",as.character(x),"_.csv"))
-# 	toc = Sys.time()
-# 	print(paste("per:", as.numeric(toc-tic)))
-# }, mc.cores=8)
+bigg <- diagonal_merge_constraint_list(const1$constraints)
+
+d <- fread("data/nine_task_equivalence_matrix.csv",skip=1)[,2:10]
+d[is.na(d)] <- 0
+c_in_cTx <- rep(1,ncol(bigg$constr))
+#minimize l1 sum activation
+lp_result <- lp("min", objective.in = c_in_cTx, const.mat = bigg$constr,
+    const.dir = bigg$dir, const.rhs = bigg$rhs,
+    compute.sens = 0)
 
 
-get_sorted_csv_filenames_for_taskA <- function(){
-	base <- "/Volumes/GoogleDrive/My\ Drive/st/task_A"
-	raw_filenames <- dir(base)
-	first_underscores <- sub("^[^_]*_", "", raw_filenames)
-	second_underscores <- sub("^[^_]*_", "", first_underscores)
-	numbers <- as.integer(gsub("_.*","",second_underscores))
-	sorted_indices <- order(numbers)
-	return(file.path(base,raw_filenames[sorted_indices]))
-}
+ har_list <- pbmclapply(seq(1, length(const1$constraints)), function(x) {
+	tic = Sys.time()
+	points <- const1$constraints[[x]] %>% har_sample(1e5)
+	toc = Sys.time()
+	print(paste("per:", as.numeric(toc-tic)))
+
+	# Sort by first row
+	return(points[order(points[,1]),])
+}, mc.cores=8)
+
 
 bigdt <- pblapply(get_sorted_csv_filenames_for_taskA(), fread) %>% rbindlist(id=TRUE)
 wtask <- merge(bigdt, taskdf, ".id")

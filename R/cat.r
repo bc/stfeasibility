@@ -27,3 +27,21 @@ get_muscle_bounds_for_rhs_task <- function(constraint){
 	})
 	return(rbindlist(bound_solutions))
 }
+
+
+
+
+get_sorted_csv_filenames_for_taskA <- function(){
+	base <- "/Volumes/GoogleDrive/My\ Drive/st/task_A"
+	raw_filenames <- dir(base)
+	first_underscores <- sub("^[^_]*_", "", raw_filenames)
+	second_underscores <- sub("^[^_]*_", "", first_underscores)
+	numbers <- as.integer(gsub("_.*","",second_underscores))
+	sorted_indices <- order(numbers)
+	return(file.path(base,raw_filenames[sorted_indices]))
+}
+
+
+mat_path <- "~/Documents/GitHub/bc/stfeasibility/data/Sohn2013_hinlimb_models.mat"
+cat_mat <- readMat(mat_path)
+cat1 <- get_cat_H_matrix(cat_mat, 1)

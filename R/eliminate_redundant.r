@@ -51,7 +51,6 @@ eliminate_redundant_hitandrun <- function(constr) {
 
   h <- 
     if (length(eq[['dir']]) > 0) {
-      browser()
       rcdd::makeH(iq$constr, iq$rhs, eq$constr, eq$rhs)
     } else {
       rcdd::makeH(iq$constr, iq$rhs)

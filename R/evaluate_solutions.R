@@ -22,3 +22,13 @@ evaluate_constraint_solution_pairs <- function(constraint_solution_pairs, ...){
         evaluate_solutions(x$har_solutions, x$constraint_object, ...)
     })
 }
+
+every_solution_is_ind_valid <- function(soln_df_list, constraints_list){
+
+ress <- all(lapply(1:length(soln_df_list), function (i){
+    return(
+        all(evaluate_solutions(soln_df_list[[i]], constraints_list[[i]], tol=1e-4))
+        )
+    })%>%dcc)
+return(ress)
+}
