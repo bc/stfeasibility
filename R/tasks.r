@@ -63,7 +63,7 @@ distal_to_palmar_transition_coord_normalized <- function(theta) {
 
 ##@param lambda between 0 and 1 where 0 is distal and 1 is palmar along the arc of equal force magnitude
 distal_to_palmar_transition_lambda <- function(lambda){
-    return(distal_to_palmar_transition_coord_normalized(lambda * pi/2))
+    return(distal_to_palmar_transition_coord_normalized(lambda * pi/6))
 }
 get_wrench_names <- function(){
     return(c(

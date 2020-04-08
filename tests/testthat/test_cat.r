@@ -1,23 +1,19 @@
 
 wideScreen()
-task_definitions <- generate_task_csvs_for_cat(9,5)
-const_A <- generate_tasks_and_corresponding_constraints_via_df(cat1$H_matrix, task_definitions$task_A, cat1$bounds_tuple_of_numeric)
-const_B <- generate_tasks_and_corresponding_constraints_via_df(cat1$H_matrix, task_definitions$task_B, cat1$bounds_tuple_of_numeric)
-const_C <- generate_tasks_and_corresponding_constraints_via_df(cat1$H_matrix, task_definitions$redirection_tasks, cat1$bounds_tuple_of_numeric)
+task_definitions <- generate_task_csvs_for_cat(5,1)
+mylen <- 31
+input_H <- cat1$H_matrix[,1:mylen]
+input_bounds <- cat1$bounds_tuple_of_numeric[1:mylen]
+const_C <- generate_tasks_and_corresponding_constraints_via_df(input_H, task_definitions$redirection_tasks, input_bounds)
+p_per_C <- pbmclapply(const_C$constraints,har_sample,1000, mc.cores=8)
 
+to_midpt <- diagonal_merge_constraint_list(const_C$constraints)
 
-p_per_C <- pbmclapply(const_C$constraints,har_sample,10000, mc.cores=8)
-p_per_A <- pbmclapply(const_A$constraints,har_sample,10000, mc.cores=8)
-p_per_B <- pbmclapply(const_B$constraints,har_sample,10000, mc.cores=8)
+velocity_constraint <- generate_full_velocity_constraint(to_midpt, 1.0, 1.0, mylen)
+constraint_with_velocity_requirements <- merge_constraints(to_midpt,velocity_constraint)
+rm_redundancy <- constraint_with_velocity_requirements %>% eliminate_redundant()
+ress <- rm_redundancy %>% pb_har_sample(1000, mc.cores=8)
 
-to_midpt <- diagonal_merge_constraint_list(const_C$constraints[c(1,9)])
-
-    velocity_constraint <- generate_full_velocity_constraint(to_midpt, 0.5,
-        0.5, 31)
-constraint_with_velocity_requirements <- merge_constraints(to_midpt,
-        velocity_constraint)
-
-ress <- constraint_with_velocity_requirements %>% har_sample(1000)
 if(all(c(
 	every_solution_is_ind_valid(p_per_A, const_A$constraints),
 	every_solution_is_ind_valid(p_per_B, const_B$constraints),
@@ -103,7 +99,7 @@ rownames(directions) <- c("dir_+x",
 							"dir_-y",
 							"dir_-z")
 directional_mvcs <- apply(directions,1,function(direction){
-	solution <- maximize_wrench(cat1$H_matrix, cat1$bounds_tuple_of_numeric, direction = direction)
+	solution <- maximize_wrench(cat1$H_matrix[,1:20], cat1$bounds_tuple_of_numeric[1:20], direction = direction)
 	return(solution$lambda_values)
 	})
 print(directional_mvcs)
