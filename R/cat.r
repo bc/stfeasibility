@@ -1,4 +1,4 @@
-
+library(R.matlab)
 get_cat_H_matrix <- function(cat_mat, cat_number){
 	get_R <- function(cat_mat, cat_number) cat_mat$Cats[[cat_number]][[1]][[1]]
 	get_J <- function(cat_mat, cat_number) cat_mat$Cats[[cat_number]][[1]][[2]]

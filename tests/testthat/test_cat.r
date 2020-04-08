@@ -6,27 +6,59 @@ const_B <- generate_tasks_and_corresponding_constraints_via_df(cat1$H_matrix, ta
 const_C <- generate_tasks_and_corresponding_constraints_via_df(cat1$H_matrix, task_definitions$redirection_tasks, cat1$bounds_tuple_of_numeric)
 
 
+p_per_C <- pbmclapply(const_C$constraints,har_sample,10000, mc.cores=8)
 p_per_A <- pbmclapply(const_A$constraints,har_sample,10000, mc.cores=8)
 p_per_B <- pbmclapply(const_B$constraints,har_sample,10000, mc.cores=8)
-p_per_C <- pbmclapply(const_C$constraints,har_sample,10000, mc.cores=8)
 
-every_solution_is_ind_valid(p_per_A, const_A$constraints)
-# see if the solutions actually meet the constraints:
-every_solution_is_ind_valid <- function(soln_df_list, constraints_list){
+to_midpt <- diagonal_merge_constraint_list(const_C$constraints[c(1,9)])
 
-ress <- all(lapply(1:length(soln_df_list), function (i){
-	return(
-		all(evaluate_solutions(soln_df_list[[i]], constraints_list[[i]], tol=1e-4))
-		)
-	})%>%dcc)
-return(ress)
+    velocity_constraint <- generate_full_velocity_constraint(to_midpt, 0.5,
+        0.5, 31)
+constraint_with_velocity_requirements <- merge_constraints(to_midpt,
+        velocity_constraint)
+
+ress <- constraint_with_velocity_requirements %>% har_sample(1000)
+if(all(c(
+	every_solution_is_ind_valid(p_per_A, const_A$constraints),
+	every_solution_is_ind_valid(p_per_B, const_B$constraints),
+	every_solution_is_ind_valid(p_per_C, const_C$constraints)))){
+	print("All sampled solutions meet set requirements")
+} else{
+	print("Error: sample does not match constraints")
 }
-# they do!
+
+Q
+culled <- function(B, A, max_delta){
+	a_connections_per_soln_in_b <- pbapply(B, 1, function(b_soln){
+		max_delta_vals <- apply(A, 1, function(a_soln){
+				return(max(abs(b_soln[1:31] - a_soln[1:31])))
+				})
+		print(summary(max_delta_vals))
+		return(max_delta_vals < max_delta)
+		})
+	return(B[a_connections_per_soln_in_b,])
+}
+L <- lapply(p_per_C, function(x){
+	x$solution_id <- 1:nrow(x)
+	rr <- data.table(x)
+	# rr %>% setorder("adf")
+	return(rr[1:10000])
+	})
+
+L_out <- list()
+#initialization
+L_prime_i <- L[[1]]
+for (i in seq(1,9)) {
+	L_prime_i <- culled(L[[i + 1]], L_prime_i, 0.125)
+	L_out <- c(L_prime, L_prime_i)
+}
 
 
+
+
+muscle_bounds <- get_muscle_bounds_for_rhs_task(nulltask)
 
 nulltask <- const1$constraints[[1]]
-muscle_bounds <- get_muscle_bounds_for_rhs_task(nulltask)
 get_muscle_bounds_for_rhs_task(nulltask)
 
 
@@ -42,27 +74,6 @@ c_in_cTx <- rep(1,ncol(bigg$constr))
 lp_result <- lp("min", objective.in = c_in_cTx, const.mat = bigg$constr,
     const.dir = bigg$dir, const.rhs = bigg$rhs,
     compute.sens = 0)
-
-
- har_list <- pbmclapply(seq(1, length(const1$constraints)), function(x) {
-	tic = Sys.time()
-	points <- const1$constraints[[x]] %>% har_sample(1e5)
-	toc = Sys.time()
-	print(paste("per:", as.numeric(toc-tic)))
-
-	# Sort by first row
-	return(points[order(points[,1]),])
-}, mc.cores=8)
-
-
-bigdt <- pblapply(get_sorted_csv_filenames_for_taskA(), fread) %>% rbindlist(id=TRUE)
-wtask <- merge(bigdt, taskdf, ".id")
-
-taskdf$.id <- 1:nrow(taskdf)
-pointclouds <- split(wtask, wtask$.id)
-
-a <- pointclouds[[1]] #all assumed to be viable
-b <- pointclouds[[2]]
 
 pbapply(a,1,function(myrow){
 	# matrix_subtraction where myrow is the nth element of the first task matrix
