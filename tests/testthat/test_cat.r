@@ -1,27 +1,39 @@
 
 wideScreen()
-task_definitions <- generate_task_csvs_for_cat(5,1)
-mylen <- 31
-input_H <- cat1$H_matrix[,1:mylen]
+
+
+task_definitions <- generate_task_csvs_for_cat(7,1)
+# make_nice_task_animation(task_definitions)
+
+mylen <- 10
+set_choice <- sample(1:31)[1:mylen]
+input_H <- cat1$H_matrix[,set_choice]
 input_bounds <- cat1$bounds_tuple_of_numeric[1:mylen]
 const_C <- generate_tasks_and_corresponding_constraints_via_df(input_H, task_definitions$redirection_tasks, input_bounds)
-p_per_C <- pbmclapply(const_C$constraints,har_sample,1000, mc.cores=8)
-
-to_midpt <- diagonal_merge_constraint_list(const_C$constraints)
-
-velocity_constraint <- generate_full_velocity_constraint(to_midpt, 1.0, 1.0, mylen)
-constraint_with_velocity_requirements <- merge_constraints(to_midpt,velocity_constraint)
-rm_redundancy <- constraint_with_velocity_requirements %>% eliminate_redundant()
-ress <- rm_redundancy %>% pb_har_sample(1000, mc.cores=8)
+# nored_constraints <- pbmclapply(const_C$constraints, eliminate_redundant)
+p_per_C <- lapply(const_C$constraints,har_sample,100)
+variances <- lapply(p_per_C, function(x) {apply(x, 2, var)}) %>% dcrb
+print("set_choice")
+print(set_choice)
+print(variances)
 
 if(all(c(
-	every_solution_is_ind_valid(p_per_A, const_A$constraints),
-	every_solution_is_ind_valid(p_per_B, const_B$constraints),
 	every_solution_is_ind_valid(p_per_C, const_C$constraints)))){
 	print("All sampled solutions meet set requirements")
 } else{
 	print("Error: sample does not match constraints")
 }
+
+to_midpt <- diagonal_merge_constraint_list(const_C$constraints)
+to_midpt %>% har_sample(10)
+
+
+
+
+
+velocity_constraint <- generate_full_velocity_constraint(to_midpt, 1.0, 1.0, mylen)
+constraint_with_velocity_requirements <- merge_constraints(to_midpt,velocity_constraint)
+
 
 Q
 culled <- function(B, A, max_delta){

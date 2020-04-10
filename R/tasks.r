@@ -6,6 +6,25 @@ generate_tasks_and_corresponding_constraints <- function(H_matrix, vector_out, n
     output_dimension_names <- rownames(H_matrix)
     tasks <- task_time_df(fmax_task = vector_out, n_samples = n_task_values, cycles_per_second = cycles_per_second,
         cyclical_function = cyclical_function, output_dimension_names = output_dimension_names)
+    tasks$Fx <- c(
+0,
+-0.130526192220052,
+-0.38268343236509,
+-0.5,
+-0.38268343236509,
+-0.130526192220052,
+0
+        )
+    tasks$Fy<- c(
+-1,
+-0.99144486137381,
+-0.923879532511287,
+-0.866025403784439,
+-0.923879532511287,
+-0.99144486137381,
+-1
+        )
+    time <- c(0.000,0.050,0.100,0.150,0.200,0.250,0.300)
     list_of_constraints_per_task <- apply(tasks, 1, function(x) {
         a_matrix_rhs_task(H_matrix, task_wrench=as.numeric(x[output_dimension_names]), bounds_tuple_of_numeric)
     })
@@ -76,11 +95,14 @@ get_wrench_names <- function(){
         ))
 }
 
-
+make_nice_task_animation <- function(task_definitions){ 
+p <- ggplot(task_definitions$redirection_tasks%>%data.table,aes(x,y,frame=time))  + geom_point() + coord_fixed() +xlim(-1,1) + ylim(-1,1)
+ggplotly(p)
+}
 normalized_transition_forces <- function(lenout){
     lambdas <- untimed_lambdas(lenout,force_cos_ramp)
     
-    m <- lapply(lambdas, function(a){distal_to_palmar_transition_lambda(1-a)})%>%dcrb
+    m <- lapply(lambdas, function(a){distal_to_palmar_transition_lambda(a)})%>%dcrb
     colnames(m) <- get_wrench_names()
     m <- data.table(m)
     m$lambda <- lambdas

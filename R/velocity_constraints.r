@@ -3,6 +3,7 @@ force_cos_ramp_constraint <- function(H_matrix, bounds_tuple_of_numeric, vector_
     max_allowable_decreasing_tension_speed, n_task_values=1000, cycles_per_second=60, cyclical_function=force_cos_ramp, eliminate=TRUE){
         if (n_task_values <2) stop("must be at least 3 task values for spatiotemporal constraints")
         near_maximal_task <- vector_out*(1-1e-05)
+
         tasks_and_constraints <- generate_tasks_and_corresponding_constraints(H_matrix=H_matrix, vector_out = near_maximal_task, n_task_values = n_task_values, cycles_per_second = cycles_per_second, cyclical_function = cyclical_function,
         bounds_tuple_of_numeric=bounds_tuple_of_numeric)
         num_muscles <- ncol(H_matrix)
@@ -123,6 +124,7 @@ generate_velocity_constraint_matrix <- function(constraint_object, num_muscles) 
     })
     transition_blocks <- lapply(muscle_names_per_transition, transition_inequalities_for_velocity)
     velocity_constraint <- compose_velocity_constraint_per_transition(transition_blocks,num_muscles) %>% combine_velocity_constraints
+    # browser()
     expect_equal(num_pairs * num_muscles * 2, nrow(velocity_constraint))
     velocity_constraint <- velocity_constraint %>% set_colnames(colnames(constraint_object$constr))
     return(velocity_constraint)
