@@ -8,6 +8,7 @@ stfeasibility.sublime-workspace
 # Session Data files
 .RData
 *.pdf
+*.png
 # Example code in package build process
 *-Ex.R
 
