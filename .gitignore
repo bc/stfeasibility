@@ -11,7 +11,7 @@ stfeasibility.sublime-workspace
 *.png
 # Example code in package build process
 *-Ex.R
-
+figures/.DS_Store
 # Output files from R CMD build
 /*.tar.gz
 
