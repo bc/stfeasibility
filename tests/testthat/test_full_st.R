@@ -58,9 +58,8 @@ test_that('full_st histograms', {
 
     speeds <- c(0.05,0.1,.25,0.5,.75,1.0)
     loop_update(0.0)
-    spatiotemporal_evaluations <- lapply(speeds, st_with_vel, har_n=1e3)
+    spatiotemporal_evaluations <- lapply(speeds, st_with_vel, har_n=1e4)
     loop_update(1.0)
-    source('R/runplots.r')
     runplots(spatiotemporal_evaluations)
 
 

@@ -183,7 +183,7 @@ plot_ffs <- function(ffs_points, tasks_df){
 }
     st_with_vel <- function(discrete_speed_limit,har_n) {
         loop_update(discrete_speed_limit)
-        my_H_matrix <- read.csv("/Users/Olive/Downloads/redirection_task/fvc_hentz_2002.csv", row.names=1) %>% as.matrix
+        my_H_matrix <- read.csv("data/fvc_hentz_2002.csv", row.names=1) %>% as.matrix
         my_H_matrix <- my_H_matrix
         ffs_points <- gen_7d_ffs(my_H_matrix)
         plot_ffs(ffs_points, st_constr_str$tasks_and_constraints$tasks * 10)
