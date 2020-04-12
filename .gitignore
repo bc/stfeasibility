@@ -1,3 +1,4 @@
+figures
 stfeasibility.sublime-workspace
 /A
 # History files
@@ -14,7 +15,8 @@ stfeasibility.sublime-workspace
 figures/.DS_Store
 # Output files from R CMD build
 /*.tar.gz
-
+.DS_Store
+redirection_figures
 # Output files from R CMD check
 /*.Rcheck/
 

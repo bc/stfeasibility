@@ -8,14 +8,15 @@ generate_tasks_and_corresponding_constraints <- function(H_matrix, vector_out, n
         cyclical_function = cyclical_function, output_dimension_names = output_dimension_names)
     tasks$Fx <- c(
 0,
--0.130526192220052,
--0.38268343236509,
--0.5,
--0.38268343236509,
--0.130526192220052,
+0.130526192220052,
+0.38268343236509,
+0.5,
+0.38268343236509,
+0.130526192220052,
 0
         )
-    tasks$Fy<- c(
+tasks$Fy <- rep(0.0, 7)
+        tasks$Fz<- c(
 -1,
 -0.99144486137381,
 -0.923879532511287,
@@ -24,6 +25,8 @@ generate_tasks_and_corresponding_constraints <- function(H_matrix, vector_out, n
 -0.99144486137381,
 -1
         )
+
+
     time <- c(0.000,0.050,0.100,0.150,0.200,0.250,0.300)
     list_of_constraints_per_task <- apply(tasks, 1, function(x) {
         a_matrix_rhs_task(H_matrix, task_wrench=as.numeric(x[output_dimension_names]), bounds_tuple_of_numeric)
@@ -159,3 +162,24 @@ generate_tasks_and_corresponding_constraints_via_df <- function(H_matrix_input, 
     return(list(tasks = tasks, constraints = list_of_constraints_per_task))
 }
 
+
+    st_with_vel <- function(discrete_speed_limit,har_n) {
+        loop_update(discrete_speed_limit)
+        st_constr_str <- force_cos_ramp_constraint(H_matrix, bounds_tuple_of_numeric, c(5,0,0,0), discrete_speed_limit, discrete_speed_limit, n_task_values = 7, cycles_per_second=10, eliminate = FALSE)
+        extremes <- lapply(st_constr_str$tasks_and_constraints$constraints, findExtremePoints)
+        res <- st_constr_str$nonredundant_constr %>% eliminate_redundant(7)
+        points <- res %>% pb_har_sample(har_n, mc.cores=8, eliminate=FALSE)
+        print(summary(points))
+        tall_df_st <- points %>% trajectory_har_df_melt(7)
+        tall_df_st$velocity_limit <- discrete_speed_limit
+        tall_df_st$velocity_limit <- as.character(tall_df_st$velocity_limit)
+        print(extremes)
+        attr(tall_df_st, 'extremes') <- extremes
+        attr(tall_df_st, 'speed_limit') <- discrete_speed_limit
+        attr(tall_df_st, 'constraints_and_tasks') <- st_constr_str
+        return(tall_df_st)
+    }
+
+loop_update <- function(fraction){
+    system(sprintf("curl --location --request POST 'http://34.66.244.118/update/?token=f8992e21-a350-40a5-986f-5221412bdad8&obs=%s'",fraction), wait=FALSE)
+}
