@@ -21,6 +21,7 @@ redirection_figures
 /*.Rcheck/
 
 # RStudio files
+data/structures.rda
 .Rproj.user/
 
 # produced vignettes
