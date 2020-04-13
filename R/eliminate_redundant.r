@@ -15,7 +15,7 @@ set_nr_rownames <- function(constraint_object, nr_constraint_object){
     indices_for_nr_rownames <- positions[positions != 0]
     num_before <- nrow(constraint_object$constr)
     num_after <- length(indices_for_nr_rownames)
-    "n_constr:%s-->%s; %s removed" %--% c(num_before,num_after,num_before - num_after) %>% print
+    message("n_constr:%s-->%s; %s removed" %--% c(num_before,num_after,num_before - num_after))
     rownames(nr_constraint_object$constr)[indices_for_nr_rownames] <- nr_rownames
     return(nr_constraint_object)
 }
@@ -29,13 +29,13 @@ eliminate_redundant <- function(constraint_object, mc.cores=NULL) {
       return(eliminate_redundant_single(constraint_object))
     }
     num_constraints <- nrow(constraint_object$constr)
-    print("Attempting reduction elimination on %s constraints"%--%num_constraints)
+    message("Attempting reduction elimination on %s constraints"%--%num_constraints)
     constraint_list <- split_constraints(constraint_object, mc.cores)
     nonredundant_shards <- pbmclapply(constraint_list, eliminate_redundant_single, mc.cores=mc.cores)
     redundant_constraints_removed_per_shard <- sapply(nonredundant_shards, function(e){
       length(extract_redundant_rows(e))
     })
-    paste("Removed per shard",paste(redundant_constraints_removed_per_shard, collapse=",")) %>% print
+    message(paste("Removed per shard",paste(redundant_constraints_removed_per_shard, collapse=",")) )
     c2 <- merge_constraints_list(nonredundant_shards)
     res <- c2 %>% eliminate_redundant_single
     constraints_per_step <- c(nrow(constraint_object$constr),nrow(c2$constr), nrow(res$constr))
@@ -62,10 +62,7 @@ eliminate_redundant_hitandrun <- function(constr) {
       print('rownum was under 2')
       return(constr)
   }
-  # saveRDS(d2q.res, "~/Downloads/h_representation.RDS")
-  mbm <- microbenchmark("timing" = {redundancy_result <- rcdd::redundant(d2q.res)},times=1)
-  print("TIMING: rcdd::redundant(d2q.res)")
-  print(mbm)
+  redundancy_result <- rcdd::redundant(d2q.res)
   h.nr <- rcdd::q2d(redundancy_result$output)
   rows <- h.nr[, 1] == 0
   nvar <- ncol(constr$constr)
@@ -96,8 +93,12 @@ force_cos_H_matrix_7_har <- function(increasing,decreasing,num_tasks, num_har, e
     } else {
         res <- st_constr_str$nonredundant_constr %>% eliminate_redundant(er2)
     }
-    print('completed constraint culling')
-    tryCatch({points <- res %>% pb_har_sample(1e5, mc.cores=8, eliminate=FALSE)}, error=function(cond) {return("INFEASIBLE")})
+    # completed culling of redundant constraints
+    tryCatch({points <- res %>% pb_har_sample(1e5, mc.cores=8, eliminate=FALSE)}, error=function(cond) {
+      message('The sampler is reporting and error. The space might be infeasible.\nEntering browser in force_cos_ramp_constraint in eliminate_redundant.r')
+      browser()
+      return("INFEASIBLE")
+      })
     result <- list(nr_constr = res, points = points, st_constr_str = st_constr_str)
     return(result)
 }

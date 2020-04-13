@@ -169,7 +169,6 @@ gen_7d_ffs <- function(H_matrix_input){
     return(vals%>%data.table)
 }
 
-
 plot_ffs <- function(ffs_points, tasks_df){
     p <- ggplot(ffs_points, aes(Fx,Fz,col=Fy)) 
     p <- p + geom_point()
@@ -181,27 +180,28 @@ plot_ffs <- function(ffs_points, tasks_df){
     p <- p + geom_path(data = tasks_df, aes(x=Fx, y = Fz), col="green")
     ggsave("figures/ffs.pdf")
 }
-    st_with_vel <- function(discrete_speed_limit,har_n) {
-        loop_update(discrete_speed_limit)
-        my_H_matrix <- read.csv("data/fvc_hentz_2002.csv", row.names=1) %>% as.matrix
-        my_H_matrix <- my_H_matrix
-        ffs_points <- gen_7d_ffs(my_H_matrix)
-        plot_ffs(ffs_points, st_constr_str$tasks_and_constraints$tasks * 10)
-        # H_matrix
-        st_constr_str <- force_cos_ramp_constraint(my_H_matrix, bounds_tuple_of_numeric, c(10,0,0,0), discrete_speed_limit, discrete_speed_limit, n_task_values = 7, cycles_per_second=10, eliminate = FALSE)
-        extremes <- lapply(st_constr_str$tasks_and_constraints$constraints, findExtremePoints)
-        res <- st_constr_str$nonredundant_constr %>% eliminate_redundant(7)
-        points <- res %>% pb_har_sample(har_n, mc.cores=8, eliminate=FALSE)
-        tall_df_st <- points %>% trajectory_har_df_melt(7)
-        tall_df_st$velocity_limit <- discrete_speed_limit
-        tall_df_st$velocity_limit <- as.character(tall_df_st$velocity_limit)
-        print(extremes)
-        attr(tall_df_st, 'extremes') <- extremes
-        attr(tall_df_st, 'speed_limit') <- discrete_speed_limit
-        attr(tall_df_st, 'constraints_and_tasks') <- st_constr_str
-        return(tall_df_st)
-    }
+st_with_vel <- function(discrete_speed_limit,har_n) {
+    loop_update(discrete_speed_limit)
+    message(sprintf("BEGIN %s",discrete_speed_limit))
+    my_H_matrix <- read.csv("data/fvc_hentz_2002.csv", row.names=1) %>% as.matrix
+    my_H_matrix <- my_H_matrix
+    # H_matrix
+    st_constr_str <- force_cos_ramp_constraint(my_H_matrix, bounds_tuple_of_numeric, c(10,0,0,0), discrete_speed_limit, discrete_speed_limit, n_task_values = 7, cycles_per_second=10, eliminate = FALSE)
+    extremes <- lapply(st_constr_str$tasks_and_constraints$constraints, findExtremePoints)
+    ffs_points <- gen_7d_ffs(my_H_matrix)
+    plot_ffs(ffs_points, st_constr_str$tasks_and_constraints$tasks * 10)
+    res <- st_constr_str$nonredundant_constr %>% eliminate_redundant(7)
+    points <- res %>% har_sample(har_n, eliminate=FALSE)
+    tall_df_st <- points %>% trajectory_har_df_melt(7)
+    tall_df_st$velocity_limit <- discrete_speed_limit
+    tall_df_st$velocity_limit <- as.character(tall_df_st$velocity_limit)
+    # print(extremes)
+    attr(tall_df_st, 'extremes') <- extremes
+    attr(tall_df_st, 'speed_limit') <- discrete_speed_limit
+    attr(tall_df_st, 'constraints_and_tasks') <- st_constr_str
+    return(tall_df_st)
+}
 
-loop_update <- function(fraction){
-    system(sprintf("curl --location --request POST 'http://34.66.244.118/update/?token=f8992e21-a350-40a5-986f-5221412bdad8&obs=%s'",fraction), wait=FALSE)
+loop_update <- function(fraction, token_string = "6c8f2b13-f601-452f-9ad4-3f27c340efe5"){
+    system(sprintf("curl --location --request POST 'http://loop_service.briancohn.com/update/?token=%s&obs=%s'",token_string, fraction), wait=FALSE)
 }

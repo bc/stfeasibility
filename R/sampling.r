@@ -21,21 +21,84 @@ har_sample <- function(constr, n_samples, ...) {
     message(paste("har thin steps:", thin, "for dimensionality_x=", x_dimensionality,
         ""))
     serial_time <- har_time_estimate(constr, n_samples, thin)
-    samples <- hitandrun(constr, n.samples = n_samples, thin = thin, ...) %>% as.data.frame
+    samples <- brian_hitandrun(constr, n.samples = n_samples, thin = thin, ...) %>% as.data.frame
     colnames(samples) <- colnames(constr$constr)
     return(samples)
 }
+brian_hitandrun <- function (constr, n.samples = 10000, thin.fn = function(n) {
+    ceiling(log(n + 1)/4 * n^3)
+}, thin = NULL, x0.randomize = FALSE, x0.method = "slacklp",
+    x0 = NULL, eliminate = TRUE)
+{
+    message(sprintf('Initiating HAR at %s', Sys.time()))
+    state <- brian_har_init(constr, thin.fn, thin, x0.randomize, x0.method,
+        x0, eliminate)
+    message(sprintf('Initiation complete. MCMC begins now at %s', Sys.time()))
+    result <- har.run(state, n.samples)
+    result$samples
+}
+
+brian_har_init <- function (constr, thin.fn = function(n) {
+    ceiling(log(n + 1)/4 * n^3)
+}, thin = NULL, x0.randomize = FALSE, x0.method = "slacklp",
+    x0 = NULL, eliminate = TRUE)
+{
+    stopifnot(length(constr[["rhs"]]) == length(constr[["dir"]]))
+    stopifnot(length(constr[["rhs"]]) == nrow(constr[["constr"]]))
+    stopifnot(length(constr[["rhs"]]) > 0)
+    message(sprintf('---eliminating redundant constraints at %s',Sys.time()))
+    constr <- if (eliminate)
+        eliminateRedundant(constr)
+    else constr
+    message(sprintf('---operating on nonredundant constraints at %s',Sys.time()))
+    eq <- hitandrun:::eq.constr(constr)
+    iq <- hitandrun:::iq.constr(constr)
+    basis <- if (length(eq$dir) > 0) {
+        hitandrun:::solution.basis(eq)
+    }
+    else {
+        n <- ncol(constr$constr)
+        list(translate = rep(0, n), basis = diag(n))
+    }
+    message(sprintf('---Extracting basis transform %s',Sys.time()))
+    transform <- createTransform(basis)
+    constr <- transformConstraints(transform, iq)
+    
+    message(sprintf('---Generating seed point at %s',Sys.time()))
+    if (is.null(x0)) {
+        x0 <- createSeedPoint(constr, homogeneous = TRUE, randomize = x0.randomize,
+            method = x0.method)
+    }
+    else {
+        x0 <- createTransform(basis, inverse = TRUE) %*% c(x0,
+            1)
+    }
+    n <- length(x0) - 1
+    if (is.null(thin)) {
+        thin <- if (n == 0)
+            1
+        else thin.fn(n)
+    }
+    list(basis = basis, transform = transform, constr = constr,
+        x0 = x0, thin = thin)
+}
+
+
 
 pb_har_sample <- function(constr, n_samples, mc.cores = 1, ...) {
     if (!constraint_is_feasible(constr)){
         stop("constraint_infeasible")
     }
     samples_per_core <- shard_a_total(total = n_samples, n_shards = mc.cores)
+    browser("sampling shards")
     samples <- pbmclapply(samples_per_core, function(har_n) {
         har_sample(constr, n_samples = har_n, ...)
     }, mc.cores = mc.cores)
-    res <- rbindlist(samples) %>% as.data.frame
-    return(res)
+    tryCatch(res <- rbindlist(samples) , error=function(e){
+        browser()
+        })
+    
+    return(res %>% as.data.frame)
 }
 
 generate_task_trajectory_and_har <- function(H_matrix, vector_out, n_task_values,

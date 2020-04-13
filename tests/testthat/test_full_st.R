@@ -1,5 +1,24 @@
 context('hi')
 
+test_that('full_st histograms', {
+
+    # ~.05 every 10ms, so 50ms = 25% change in activation
+    setwd('/Users/Olive/Documents/GitHub/bc/stfeasibility')
+
+    speeds <- c(0.05,0.1,.25,0.5,.75,1.0)
+    loop_update(0.1)
+    spatiotemporal_evaluations <- pbmclapply(speeds, st_with_vel, har_n=1e6, mc.cores=6)
+    loop_update(1.0)
+    source('R/runplots.r')
+
+    runplots(spatiotemporal_evaluations)
+    run_step_speed_distributions_plot(spatiotemporal_evaluations)
+
+    lp("min", objective.in = rep(1,ncol(res)), const.mat = res$constr,
+              const.dir = res$dir, const.rhs = res$rhs,
+              compute.sens = 0)
+})
+skip('not today ')
 test_that('minitest', { 
     vector_out <- c(10,0,0,0)
     profvis({smallest_feasible_speedlimit <- bisection_method(1e-8, 0.25, 1e-5, f = force_cos_ramp_is_feasible, vector_out=vector_out)})
@@ -16,6 +35,7 @@ test_that('minitest', {
 })
 
 library(pracma)
+skip('not today ')
 test_that('very submaximal forces', { 
     profvis({vector_out <- c(10,0,0,0)
     smallest_feasible_speedlimit <- bisection_method(1e-9, 0.10, 1e-5, f = force_cos_ramp_is_feasible, vector_out=vector_out)
@@ -35,6 +55,7 @@ test_that('very submaximal forces', {
 })
 
 context('fullst 20')
+skip('not today ')
 test_that('full_ st histograms_20', { 
     profvis({vector_out <- c(28.8,0,0,0)
     smallest_feasible_speedlimit <- bisection_method(1e-9, 10, 1e-5, f = force_cos_ramp_is_feasible, vector_out=vector_out)
@@ -50,23 +71,6 @@ test_that('full_ st histograms_20', {
     }, mc.cores=8)}, interval=300)
 })
 
-skip('not today ')
-test_that('full_st histograms', {
-
-    # ~.05 every 10ms, so 50ms = 25% change in activation
-
-
-    speeds <- c(0.05,0.1,.25,0.5,.75,1.0)
-    loop_update(0.0)
-    spatiotemporal_evaluations <- lapply(speeds, st_with_vel, har_n=1e4)
-    loop_update(1.0)
-    runplots(spatiotemporal_evaluations)
-
-
-    lp("min", objective.in = rep(1,ncol(res)), const.mat = res$constr,
-              const.dir = res$dir, const.rhs = res$rhs,
-              compute.sens = 0)
-})
 
 skip('not today ')
 test_that('tailor visualization', {
@@ -91,13 +95,13 @@ p <- ggplot(tall_df_st_and_no_st, aes(fill=st, frame=as.factor(task_index))) +  
 })
 
 
-# skip('not today ')
+skip('not today ')
 test_that('logical binary newton bisection_method works', {
     x_is_at_least_67 <- function(x) x>=67.98095181
     bisection_method(1.0,100.0,tol=1e-9,x_is_at_least_67)
 })
 
-# skip('not today ')
+skip('not today ')
 test_that('boxplot significance testing', {  
 p <- ggplot(tall_df_st_and_no_st, aes(task_index,activation,fill=st, group=task_index)) +  geom_boxplot() + facet_grid(st~muscle, space="free")
 skip('not today')
@@ -108,7 +112,7 @@ skip('not today')
     show(p)
 })
 
-# skip('not today ')
+skip('not today ')
 test_that('animate sample trajectories', {  
 
 p <- ggplot(tall_df_st_and_no_st, aes(task_index,activation,fill=st, group=task_index)) +  geom_boxplot() + facet_grid(st~muscle, space="free")
