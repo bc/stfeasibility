@@ -180,8 +180,8 @@ plot_ffs <- function(ffs_points, tasks_df){
     p <- p + geom_path(data = tasks_df, aes(x=Fx, y = Fz), col="green")
     ggsave("figures/ffs.pdf")
 }
-st_with_vel <- function(discrete_speed_limit,har_n) {
-    loop_update(discrete_speed_limit)
+st_with_vel <- function(discrete_speed_limit, har_n) {
+    # loop_update(discrete_speed_limit)
     message(sprintf("BEGIN %s",discrete_speed_limit))
     my_H_matrix <- read.csv("data/fvc_hentz_2002.csv", row.names=1) %>% as.matrix
     my_H_matrix <- my_H_matrix
@@ -191,8 +191,11 @@ st_with_vel <- function(discrete_speed_limit,har_n) {
     ffs_points <- gen_7d_ffs(my_H_matrix)
     plot_ffs(ffs_points, st_constr_str$tasks_and_constraints$tasks * 10)
     res <- st_constr_str$nonredundant_constr %>% eliminate_redundant(7)
-    points <- res %>% har_sample(har_n, eliminate=FALSE)
-    tall_df_st <- points %>% trajectory_har_df_melt(7)
+
+    uar_solutions <- res %>% har_sample(har_n, eliminate=FALSE)
+    print(sprintf("object size is %s",object.size(uar_solutions)))
+    tall_df_st <- uar_solutions %>% trajectory_har_df_melt(7)
+    rm(uar_solutions)
     tall_df_st$velocity_limit <- discrete_speed_limit
     tall_df_st$velocity_limit <- as.character(tall_df_st$velocity_limit)
     # print(extremes)
@@ -203,5 +206,5 @@ st_with_vel <- function(discrete_speed_limit,har_n) {
 }
 
 loop_update <- function(fraction, token_string = "6c8f2b13-f601-452f-9ad4-3f27c340efe5"){
-    system(sprintf("curl --location --request POST 'http://loop_service.briancohn.com/update/?token=%s&obs=%s'",token_string, fraction), wait=FALSE)
+    system(sprintf("curl --location --request POST 'http://loop_service.briancohn.com/update/?token=%s&obs=%s'",token_string, fraction), intern=TRUE)
 }

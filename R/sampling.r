@@ -35,6 +35,7 @@ brian_hitandrun <- function (constr, n.samples = 10000, thin.fn = function(n) {
         x0, eliminate)
     message(sprintf('Initiation complete. MCMC begins now at %s', Sys.time()))
     result <- har.run(state, n.samples)
+    message(sprintf('---completed sampling at %s',Sys.time()))
     result$samples
 }
 
@@ -51,6 +52,7 @@ brian_har_init <- function (constr, thin.fn = function(n) {
         eliminateRedundant(constr)
     else constr
     message(sprintf('---operating on nonredundant constraints at %s',Sys.time()))
+    
     eq <- hitandrun:::eq.constr(constr)
     iq <- hitandrun:::iq.constr(constr)
     basis <- if (length(eq$dir) > 0) {
@@ -173,7 +175,7 @@ trajectory_har_df_melt <- function(har_samples_df, num_muscles){
     slice_task_indices <- function(str_vector) sapply(str_vector%>%as.character, slice_task_index) %>% unname %>% as.integer
     muscle_names <- colnames(har_samples_df)[1:num_muscles]
     har_samples_df$muscle_trajectory <- seq(1, nrow(har_samples_df))
-    melted_st <- melt(har_samples_df, id.vars="muscle_trajectory", variable.factor = FALSE)
+    melted_st <- reshape2::melt(har_samples_df, id.vars="muscle_trajectory", variable.factor = FALSE)
     melted_st$muscle <- slice_muscle_names(melted_st$variable)
     melted_st$task_index[melted_st$variable %in% muscle_names == FALSE] <- slice_task_indices(melted_st$variable)[melted_st$variable %in% muscle_names == FALSE]
     melted_st$task_index[melted_st$variable %in% muscle_names == TRUE] <- 0

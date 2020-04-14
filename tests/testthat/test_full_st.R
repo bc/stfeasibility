@@ -6,17 +6,20 @@ test_that('full_st histograms', {
     setwd('/Users/Olive/Documents/GitHub/bc/stfeasibility')
 
     speeds <- c(0.05,0.1,.25,0.5,.75,1.0)
-    loop_update(0.1)
-    spatiotemporal_evaluations <- pbmclapply(speeds, st_with_vel, har_n=1e6, mc.cores=6)
     loop_update(1.0)
-    source('R/runplots.r')
-
-    runplots(spatiotemporal_evaluations)
-    run_step_speed_distributions_plot(spatiotemporal_evaluations)
+    spatiotemporal_evaluations <- pblapply(speeds, st_with_vel, har_n=1e5)
+    saveRDS(spatiotemporal_evaluations, "outputs/1e5vals_taskA_10N_mat_A_paralell_attained_secondtry.rda")
+    #ondocker:
+    system("rclone copy outputs remote:outputs")
 
     lp("min", objective.in = rep(1,ncol(res)), const.mat = res$constr,
               const.dir = res$dir, const.rhs = res$rhs,
               compute.sens = 0)
+    spatiotemporal_evaluations <- readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/100kvals_task_A_10N_mat_A.rda")
+    runplots(spatiotemporal_evaluations)
+    run_step_speed_distributions_plot(spatiotemporal_evaluations)
+
+
 })
 skip('not today ')
 test_that('minitest', { 

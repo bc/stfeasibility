@@ -27,10 +27,7 @@ run_step_speed_distributions_plot <- function(spatiotemporal_evaluations){
     points <- rbindlist(spatiotemporal_evaluations)
     points$velocity_limit <- factor(points$velocity_limit, levels=rev(as.character(speeds)))
     points <- data.table(points)
-    
-
-    # points_with_dot <- points[,.( task_index, activation, transition_index=task_transition_idx(), dot = c(diff(activation),0)), by=.(muscle_trajectory, muscle, velocity_limit)]
-    points_with_dot <- points[,.( task_index, activation, transition_index=task_transition_idx(), dot = c(diff(activation),0)), by=.(muscle_trajectory, muscle, velocity_limit)]
+    points_with_dot <- points[,.( task_index, activation, transition_index=task_transition_idx(), dot = as.numeric(c(diff(activation),0))), by=.(muscle_trajectory, muscle, velocity_limit)]
 
     # within a given muscle trajectory, describe the norm of the transition from moment to moment
     within <- points_with_dot[transition_index!="end_padding",.(normval = pracma::Norm(dot,2), max_abs_dot = max(abs(dot))), by=.(muscle_trajectory,velocity_limit,transition_index)]
@@ -41,7 +38,6 @@ run_step_speed_distributions_plot <- function(spatiotemporal_evaluations){
 
 
     message('computing for "across" plot')
-
 
     message('--calculating across distance metrics')
     across <- points[muscle_trajectory!=1, get_deltas_dt(seed_0, .SD), by=.(velocity_limit, muscle_trajectory)]
@@ -70,7 +66,9 @@ runplots <- function(spatiotemporal_evaluations){
     # boxplots figure
     points <- rbindlist(spatiotemporal_evaluations)
     points$velocity_limit <- factor(points$velocity_limit,levels=rev(as.character(speeds)))
-    summary_stats_p<- ggplot(points[,var(activation),by=.(muscle,task_index,velocity_limit)],aes(task_index,V1,col=velocity_limit,group=velocity_limit)) + geom_path() + facet_grid(~muscle) + theme_classic()
+
+    library(data.table)
+    summary_stats_p <- ggplot(points[,var(activation),by=.(muscle,task_index,velocity_limit)],aes(task_index,V1,col=velocity_limit,group=velocity_limit)) + geom_path() + facet_grid(~muscle) + theme_classic()
     ggsave("redirection_figures/variance_per_task_per_vel.pdf",summary_stats_p)
 
 
