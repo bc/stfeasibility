@@ -16,6 +16,9 @@ test_that('full_st histograms', {
         gc()
     }
 
+
+
+
     
     spatiotemporal_evaluations <- pblapply(speeds, st_with_vel, har_n=1e5)
     
@@ -43,6 +46,8 @@ test_that('full_st histograms', {
 
 
 })
+
+
 skip('not today ')
 test_that('minitest', { 
     vector_out <- c(10,0,0,0)
