@@ -5,10 +5,32 @@ test_that('full_st histograms', {
     # ~.05 every 10ms, so 50ms = 25% change in activation
     setwd('/Users/Olive/Documents/GitHub/bc/stfeasibility')
 
-    speeds <- c(0.05,0.1,.25,0.5,.75,1.0)
+    speeds <- sample(seq(0.05,1,length.out=100))
     loop_update(1.0)
+    for (i in seq(1,100)) {
+        message(sprintf('CURRENT I: %s',1))
+        out_filepath <- sprintf("outputs/ste_1e5_speed_%s_timefin_%s.rda",i,format(Sys.time(), "%H:%M:%OS3"))
+        saveRDS(st_with_vel(speeds[i],har_n=1e5),out_filepath)
+        system("rclone copy outputs remote:outputs", wait=TRUE)
+        system(sprintf("rm %s",out_filepath), wait=TRUE)
+        gc()
+    }
+
+    
     spatiotemporal_evaluations <- pblapply(speeds, st_with_vel, har_n=1e5)
-    saveRDS(spatiotemporal_evaluations, "outputs/1e5vals_taskA_10N_mat_A_paralell_attained_secondtry.rda")
+    
+
+    # saveRDS(st_with_vel(speeds[1], har_n=1e5), "outputs/first.rda")
+    # gc()
+    # saveRDS(st_with_vel(speeds[2], har_n=1e5), "outputs/second.rda")
+    # gc()
+    # saveRDS(st_with_vel(speeds[3], har_n=1e5), "outputs/third.rda")
+    # gc()
+    # saveRDS(st_with_vel(speeds[4], har_n=1e5), "outputs/fourth.rda")
+    # gc()
+    # saveRDS(st_with_vel(speeds[5], har_n=1e5), "outputs/fifth.rda")
+    # gc()
+    rclone copy outputs remote:outputs
     #ondocker:
     system("rclone copy outputs remote:outputs")
 
