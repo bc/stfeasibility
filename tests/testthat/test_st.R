@@ -1,0 +1,17 @@
+context('test combining force_cos with null st constr (degenerate case)')
+test_that("combine force_cos ", {
+	fmax_info <- maximize_wrench(H_matrix, bounds_tuple_of_numeric, direction=c(1,0,0,0))
+	st_constr_str <- force_cos_ramp_constraint(H_matrix, bounds_tuple_of_numeric, fmax_info$output_vector_per_task[[1]], 1.0,1.0, n_task_values=4)
+	points <- st_constr_str$nonredundant_constr %>% pb_har_sample(1e5, mc.cores=8, eliminate=FALSE)
+	har_tall_df <- trajectory_har_df_melt(points,ncol(H_matrix))
+	a <- plot_har_trajectory(har_tall_df)
+	ggsave(a, filename="no_st.jpg", height=40, width=40)
+
+	context('test force cosine ramp with 0.5 constr (highly generous)')
+	fmax_info <- maximize_wrench(H_matrix, bounds_tuple_of_numeric, direction=c(1,0,0,0))
+	st_constr_str <- force_cos_ramp_constraint(H_matrix, bounds_tuple_of_numeric, fmax_info$output_vector_per_task[[1]], 0.5,0.5, n_task_values=4)
+	points <- st_constr_str$nonredundant_constr %>% pb_har_sample(1e5, mc.cores=8, eliminate=FALSE)
+	har_tall_df <- trajectory_har_df_melt(points,ncol(H_matrix))
+	a <- plot_har_trajectory(har_tall_df)
+	ggsave(a, filename="st.jpg", height=40, width=40)
+})

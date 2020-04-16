@@ -1,5 +1,6 @@
+figures
 stfeasibility.sublime-workspace
-
+/A
 # History files
 .Rhistory
 .Rapp.history
@@ -7,17 +8,20 @@ stfeasibility.sublime-workspace
 /output
 # Session Data files
 .RData
-
+*.pdf
+*.png
 # Example code in package build process
 *-Ex.R
-
+figures/.DS_Store
 # Output files from R CMD build
 /*.tar.gz
-
+.DS_Store
+redirection_figures
 # Output files from R CMD check
 /*.Rcheck/
 
 # RStudio files
+data/structures.rda
 .Rproj.user/
 
 # produced vignettes

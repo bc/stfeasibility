@@ -4,7 +4,7 @@ la <- load_all
 te <- test
 atp <- auto_test_package
 
-run_full_long_tests <- TRUE
+run_full_long_tests <- FALSE
 
 # Sample Data for use in testing:
 # Test finger in flexed posture, from frontiers2018 feasibility theory paper
@@ -26,3 +26,28 @@ H_matrix_mini <- cbind(m0=c(3.333333333),
       m2=c(2.0))
 rownames(H_matrix_mini) <- "Fx"
 bounds_tuple_of_numeric_mini <- rep(list(list(lower = 0, upper = 1)), 3)
+
+
+##' medial is towards center of the hand
+##' derived from culled_hand4_flex_uar_5k_clean_static_response_from_tail_100ms_mean.csv
+cadaver_5k_dataset_train4k_LRM <- function(){
+
+muscle_name_per_index <- c("FDP","FDS","EIP","EDC","LUM","DI","PI")
+wrench_names <- c("dorsal_fx","medial_fy","proximal_fz","JR3_MX","JR3_MY","JR3_MZ")
+
+	lrm_model_of_tension_transduction <- rbind(c(-0.055472,0.0085059,-0.04143,0.040855,0.060872,0.0083857),
+										   	   c(-0.051982,0.0056465,-0.088819,0.030892,0.08346,0.003642),
+										   	   c(0.0052534,-0.0002142,0.025817,-0.002114,-0.0083006,-0.00026338),
+										   	   c(0.0070741,-0.0036766,0.021978,-0.019363,-0.0087962,-0.0016665),
+										   	   c(0.036154,0.0041829,-0.039141,0.0022464,-0.030165,0.003371),
+										   	   c(-0.002553,-0.014332,-0.0088733,-0.088249,0.0106,-0.0037038),
+										   	   c(0.039546,0.0079125,-0.038078,0.045004,-0.036593,0.0019535)) %>% t %>% as.data.frame
+	colnames(lrm_model_of_tension_transduction) <- muscle_name_per_index
+	rownames(lrm_model_of_tension_transduction) <- wrench_names
+	bias_on_wrench <- c(0.30017,-0.034335,0.17062,-0.26764,-0.40899,-0.014565)
+	names(bias_on_wrench) <- wrench_names
+	# bounds_tuple_of_numeric <- rep(list(list(lower = 0, upper = 10)), length(muscle_name_per_index))
+	# browser()
+	bounds_tuple_of_numeric <- lapply(c(123, 219, 23.52, 91.74, 21.6, 124.8, 129.6),function(x) {list(lower = 0, upper = x)})
+	return(list(H_matrix=lrm_model_of_tension_transduction, wrench_bias=bias_on_wrench, bounds_tuple_of_numeric=bounds_tuple_of_numeric))
+}

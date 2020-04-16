@@ -32,11 +32,23 @@ test_that("mbm har multiconstraint", {
 	)
 })
 
+test_that("is feasible", {
+
+})
+
 test_that("mbm har multiconstraint velocity", {
-		constraint_velocity <- compose_velocity_constraint(multiconstraint, 0.042,0.042)
+ 		expect_false(is_feasible(compose_velocity_constraint(multiconstraint, 0,0)))
+ 		expect_false(is_feasible(compose_velocity_constraint(multiconstraint, 0.042,0.042)))
+ 		expect_true(is_feasible(compose_velocity_constraint(multiconstraint, 0.5,0.5)))
+ 		expect_true(is_feasible(compose_velocity_constraint(multiconstraint, 1,1)))
+
+ 		expect_true(constraint_is_feasible(compose_velocity_constraint(multiconstraint, 1,1),7))
+ 		expect_false(constraint_is_feasible(compose_velocity_constraint(multiconstraint, 0,0),7))
+ 		res <- lpsolve_muscles_for_task("min", multiconstraint, 7)
+ 		constraint_velocity <- compose_velocity_constraint(multiconstraint, 0,0)
 		plot_constraint_matrix(constraint_velocity)
 		mbm <- microbenchmark(
-		"1e3" = {a <- r %>% har_sample(1e7); print("1/4" %>% paste(Sys.time()))},
+		"1e3" = {a <- constraint_velocity %>% har_sample(1e2)},
 		times=2
 	)
 })

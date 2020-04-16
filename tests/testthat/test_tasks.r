@@ -9,7 +9,7 @@ test_that("har datasets can be empirically culled under delta constraints", {
     har_per_task_df <- generate_task_trajectory_and_har(H_matrix = H_matrix, vector_out = fmax_info$output_vector_per_task[[1]] *
         (1 - 1e-05), n_task_values = 5, cycles_per_second = 2, cyclical_function = force_cos_ramp,
         output_dimension_names = force_dimnames, muscle_name_per_index = muscle_name_per_index,
-        bounds_tuple_of_numeric = bounds_tuple_of_numeric, num_har_samples = 10,
+        bounds_tuple_of_numeric = bounds_tuple_of_numeric, num_har_samples = 100,
         har_thin = 100)
     context("splitting by task")
     list_of_polytope_dfs <- split_by_time(har_per_task_df)
@@ -52,25 +52,24 @@ test_that("feasible task for mini H yields valid points", {
     # Generate points without delta constraints
     expect_true(all(colMins(points) > 0))
     expect_true(all(colMaxes(points) < 1))
-    points_are_valid <- apply(points, 1, evaluate_solution, constraint=constr)
+    points_are_valid <- evaluate_solutions(points, constr)
     expect_true(all(points_are_valid))
 })
 
 test_that("har performance with fixed dimensionality", {
-    constr <- constraint_H_with_bounds(H_matrix, c(5, 0, 0, 0), bounds_tuple_of_numeric)
-    mbm <- microbenchmark(
-        "pb1e3" = {a <- constr %>% pb_har_sample(1e3)},
-        "pb1e4" = {a <- constr %>% pb_har_sample(1e4)},
-        "pb1e5" = {a <- constr %>% pb_har_sample(1e5)},
-        "pb1e6" = {a <- constr %>% pb_har_sample(1e6)},
-        "pb1e6" = {a <- constr %>% pb_har_sample(1e7)},
-        "1e3" = {a <- constr %>% har_sample(1e3)},
-        "1e4" = {a <- constr %>% har_sample(1e4)},
-        "1e5" = {a <- constr %>% har_sample(1e5)},
-        "1e6" = {a <- constr %>% har_sample(1e6)},
-        "1e6" = {a <- constr %>% har_sample(1e7)},
-        times=1
-    )
+    constr <- constraint_H_with_bounds(H_matrix, c(5, 0, 0, 0), bounds_tuple_of_numeric) %>%
+        eliminate_redundant
+    mbm <- microbenchmark(pb1e3 = {
+        a <- constr %>% pb_har_sample(1e+07, mc.cores = 8, eliminate = FALSE)
+    }, pb1e4 = {
+        a <- constr %>% pb_har_sample(1e+07, mc.cores = 8, eliminate = FALSE)
+    }, pb1e5 = {
+        a <- constr %>% pb_har_sample(1e+07, mc.cores = 8, eliminate = FALSE)
+    }, pb1e6 = {
+        a <- constr %>% pb_har_sample(1e+07, mc.cores = 8, eliminate = FALSE)
+    }, pb1e7 = {
+        a <- constr %>% pb_har_sample(1e+07, mc.cores = 8, eliminate = FALSE)
+    }, times = 1)
 })
 
 test_that("we can generate force trajectory", {
@@ -162,4 +161,22 @@ test_that("we can generate and har upon each task polytope independently", {
         size = 0.01, alpha = 0.1) + stat_chull(aes(group = time), alpha = 0.1, geom = "polygon") +
         coord_fixed() + unit_cube_zoom() + theme_classic()
     gganimate::gganimate(p2, output_subfolder_path("points", "points.html"))
+})
+
+context('full_for_task_st')
+test_that('full_ st histograms', {
+    har_n <- 1e3
+    st_constr_str <- force_cos_ramp_constraint(H_matrix, bounds_tuple_of_numeric, c(28,0,0,0), 0.5, 0.5, n_task_values = 10, cycles_per_second=10, eliminate = FALSE)
+    res <- st_constr_str$nonredundant_constr %>% eliminate_redundant
+    points_st <- res %>% pb_har_sample(har_n, mc.cores=8, eliminate=FALSE)
+    p_st <- ggplot(har_per_task_df, aes(DI, PI, frame = time)) + geom_hex(aes(group = time),
+        binwidth = c(0.05, 0.05)) + coord_fixed() + unit_cube_zoom() + theme_classic()
+    points_st$st <- factor(1, levels=c(0,1))
+    st_constr_str <- force_cos_ramp_constraint(H_matrix, bounds_tuple_of_numeric, c(28,0,0,0), 1.0, 1.0, n_task_values = 10, cycles_per_second=10, eliminate = FALSE)
+    res <- st_constr_str$nonredundant_constr %>% eliminate_redundant
+    points_no_st <- res %>% pb_har_sample(har_n, mc.cores=8, eliminate=FALSE)
+    points_no_st$st <- factor(0, levels(c(0,1)))
+
+    gganimate::gganimate(p_st, output_subfolder_path("st_vs_degenerate", "st.html"))
+
 })

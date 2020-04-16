@@ -1,2 +1,0 @@
-# stfeasibility
-Spatiotemporal Feasibility Theory
