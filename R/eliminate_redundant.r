@@ -31,7 +31,7 @@ eliminate_redundant <- function(constraint_object, mc.cores=NULL) {
     num_constraints <- nrow(constraint_object$constr)
     message("Attempting reduction elimination on %s constraints"%--%num_constraints)
     constraint_list <- split_constraints(constraint_object, mc.cores)
-    nonredundant_shards <- pbmclapply(constraint_list, eliminate_redundant_single, mc.cores=mc.cores)
+    nonredundant_shards <- mclapply(constraint_list, eliminate_redundant_single, mc.cores=mc.cores)
     redundant_constraints_removed_per_shard <- sapply(nonredundant_shards, function(e){
       length(extract_redundant_rows(e))
     })
