@@ -7,8 +7,19 @@ test_that('we can extract 100 seeds for a given speed multiconstraint #23', {
     only_seeds <- st_res_dt[muscle_trajectory%in%seeds & task_index == 0,activation,by=.(muscle_trajectory, muscle)]    
     setorder(only_seeds, "muscle_trajectory")
     only_seeds$muscle <- factor(only_seeds$muscle, levels = colnames(H_multiconstraint$constr)[1:7])
-    seeds <- data.table(dcast(only_seeds, muscle~muscle_trajectory, value.var="activation"))
-    row.names(seeds) <- seeds$muscle
-    seeds$muscle <- NULL
+    seeds <- data.frame(dcast(only_seeds, muscle~muscle_trajectory, value.var="activation"))
+    samp2 <- seeds[,-1]
+	rownames(samp2) <- seeds[,1]
     H_multiconstraint <- attr(st_res, "constraints_and_tasks")$nonredundant_constr
+    
+    apply(samp2, 2, function(task_0_seed_activation){
+
+    	})
+
+    assemble_equality_with_seed_point <- function(activations7){
+    	equalityconst <- cbind(diag(7), matrix(0,7,42))
+		rownames(equalityconst) <- paste0(seeds[,1],"_task0_equality_w_seed_const")
+		colnames(equalityconst) <- colnames(H_multiconstraint$const)
+		equalit_constr_formatted <- create_equality_constraint(equalityconst, activations7)
+		return(equalit_constr_formatted)
     })
