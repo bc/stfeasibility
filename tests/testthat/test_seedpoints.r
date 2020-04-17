@@ -1,25 +1,29 @@
 ########################################
 test_that('we can extract 100 seeds for a given speed multiconstraint #23', {
+	library(data.table)
     n_seeds <- 100
+    #speed is fixed across this entire run below; is dependent on the rda used
     st_res <- readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/ste_1e5_speed_13_timefin_09:04:05.556.rda")
-    seeds <- sample(1:max(st_res$muscle_trajectory),n_seeds,replace=FALSE)
-    st_res_dt <- data.table(st_res)
-    only_seeds <- st_res_dt[muscle_trajectory%in%seeds & task_index == 0,activation,by=.(muscle_trajectory, muscle)]    
-    setorder(only_seeds, "muscle_trajectory")
-    only_seeds$muscle <- factor(only_seeds$muscle, levels = colnames(H_multiconstraint$constr)[1:7])
-    seeds <- data.frame(dcast(only_seeds, muscle~muscle_trajectory, value.var="activation"))
-    samp2 <- seeds[,-1]
-	rownames(samp2) <- seeds[,1]
     H_multiconstraint <- attr(st_res, "constraints_and_tasks")$nonredundant_constr
-    
-    apply(samp2, 2, function(task_0_seed_activation){
-
+    activation_per_seed <- extract_n_seeds_from_rda_ste(st_res, 100)
+    multiconstraint_per_seed <- pbapply(activation_per_seed, 2, function(task_0_seed_activation){
+    	res <- merge_constraints(H_multiconstraint,assemble_equality_with_seed_point(task_0_seed_activation))
+    	attr(res, "seed_activation") <- task_0_seed_activation
+    	return(res)
     	})
+    ex <- multiconstraint_per_seed[[44]]
+    ex$constr <- ex$constr[23:nrow(ex$constr),]
+    ex$dir <- ex$dir[23:length(ex$dir)]
+    ex$rhs <- ex$rhs[23:length(ex$rhs)]
 
-    assemble_equality_with_seed_point <- function(activations7){
-    	equalityconst <- cbind(diag(7), matrix(0,7,42))
-		rownames(equalityconst) <- paste0(seeds[,1],"_task0_equality_w_seed_const")
-		colnames(equalityconst) <- colnames(H_multiconstraint$const)
-		equalit_constr_formatted <- create_equality_constraint(equalityconst, activations7)
-		return(equalit_constr_formatted)
+
+    lapply(multiconstraint_per_seed, function(constraint_with_seed_fixation){
+    	points <- har_sample(constraint_with_seed_fixation, n_samples=1e5, eliminate=FALSE)
+    	attr(points, "constraint_with_seed") <- constraint_with_seed_fixation
+    	seed_id <- attr(constraint_with_seed_fixation, "seed_activation")
+    	attr(points, "seed_activation") <- seed_id
+    	target_filepath <- sprintf("/Volumes/GoogleDrive/My\ Drive/outputs/seed_evals/%s.rda",colnames(seed_id)[1])
+    	saveRDS(points,target_filepath)
+    	})
     })
+
