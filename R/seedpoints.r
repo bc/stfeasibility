@@ -20,3 +20,11 @@ assemble_equality_with_seed_point <- function(activations7){
 	equalit_constr_formatted <- create_equality_constraint(equalityconst, activations7)
 	return(list(constr = equalit_constr_formatted$constr[1:7,], dir= rep("=",7),rhs = equalit_constr_formatted$rhs[1:7]))
 }
+
+trim_top_of_constraint <- function(constraint, nrows_to_rm){
+	newversion <- constraint # mk copy
+	newversion$constr <- constraint$constr[(nrows_to_rm+1):nrow(ex$constr),]
+	newversion$dir <- constraint$dir[(nrows_to_rm+1):length(ex$dir)]
+	newversion$rhs <- constraint$rhs[(nrows_to_rm+1):length(ex$rhs)]
+	return(newversion)
+}
