@@ -21,6 +21,12 @@ ensure_folder_exists <- function(mainDir, subDir) {
   do.call(sprintf, c(list(x), y))
 }
 
+#useful when you want to make a bunch of files with different names, where the time is the difference.
+# example: "trajectories" %>% time_dot("png")
+# will yield trajectories_2020-04-17 10/06/11.png
+time_dot <- function(mystring, ending){
+    paste0(mystring,"_", Sys.time(), ".",ending)
+}
 
 ##' Dataframe to list of cols
 ##' @description derived from https://stackoverflow.com/questions/3492379/data-frame-rows-to-a-list

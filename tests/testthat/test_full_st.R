@@ -19,27 +19,11 @@ test_that('full_st histograms', {
 
 
 
-    
+    #takes a long time
     spatiotemporal_evaluations <- pblapply(speeds, st_with_vel, har_n=1e5)
-    
-
-    # saveRDS(st_with_vel(speeds[1], har_n=1e5), "outputs/first.rda")
-    # gc()
-    # saveRDS(st_with_vel(speeds[2], har_n=1e5), "outputs/second.rda")
-    # gc()
-    # saveRDS(st_with_vel(speeds[3], har_n=1e5), "outputs/third.rda")
-    # gc()
-    # saveRDS(st_with_vel(speeds[4], har_n=1e5), "outputs/fourth.rda")
-    # gc()
-    # saveRDS(st_with_vel(speeds[5], har_n=1e5), "outputs/fifth.rda")
-    # gc()
-    rclone copy outputs remote:outputs
-    #ondocker:
+    #on MSI
     system("rclone copy outputs remote:outputs")
 
-    lp("min", objective.in = rep(1,ncol(res)), const.mat = res$constr,
-              const.dir = res$dir, const.rhs = res$rhs,
-              compute.sens = 0)
     spatiotemporal_evaluations <- readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/100kvals_task_A_10N_mat_A.rda")
     runplots(spatiotemporal_evaluations)
     run_step_speed_distributions_plot(spatiotemporal_evaluations)

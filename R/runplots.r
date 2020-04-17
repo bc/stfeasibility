@@ -25,7 +25,7 @@ task_transition_idx <- function() {c("t0_t1",
 run_step_speed_distributions_plot <- function(spatiotemporal_evaluations){
     library(data.table)
     points <- rbindlist(spatiotemporal_evaluations)
-    points$velocity_limit <- factor(points$velocity_limit, levels=rev(as.character(speeds)))
+    points$velocity_limit <- factor(points$velocity_limit, levels=rev(as.character(points$speeds)))
     points <- data.table(points)
     points_with_dot <- points[,.( task_index, activation, transition_index=task_transition_idx(), dot = as.numeric(c(diff(activation),0))), by=.(muscle_trajectory, muscle, velocity_limit)]
 
