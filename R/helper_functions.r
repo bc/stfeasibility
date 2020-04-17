@@ -27,7 +27,7 @@ ensure_folder_exists <- function(mainDir, subDir) {
 time_dot <- function(mystring, ending){
     paste0(mystring,"_", Sys.time(), ".",ending)
 }
-
+ 
 ##' Dataframe to list of cols
 ##' @description derived from https://stackoverflow.com/questions/3492379/data-frame-rows-to-a-list
 ##' @param df Data frame

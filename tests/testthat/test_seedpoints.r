@@ -81,6 +81,13 @@ test_that('pca for dimensionality of different slices', {
 	p <- p + theme_classic()
 	ggsave("seed_vs_noseed_trajectories"%>%time_dot("png"),p, width=20,height=20)
 
+	p <- ggplot(seed_vs_noseed_trajectories) 
+	p <- p + geom_bar(aes(sd(activation), fill=seed_id),alpha=0.5, bins=50, position="identity", data = seed_vs_noseed_trajectories[seed_id!="Not Seeded"]) 
+	p <- p + geom_histogram(aes(activation),alpha=0.5, bins=50, fill="black", position="identity", data = seed_vs_noseed_trajectories[seed_id=="Not Seeded"]) 
+	p <- p + facet_grid(task_index~factor(muscle, levels=muscle_name_per_index), scales="free_y", space="free_y") 
+	p <- p + theme_classic()
+	ggsave("seed_vs_noseed_trajectories"%>%time_dot("png"),p, width=20,height=20)
+
 
 	# show an example of some trajectories, and their derivatives
 	desired_trajectories <- seq(1,10)
@@ -99,6 +106,9 @@ test_that('pca for dimensionality of different slices', {
 
 	p_activation_and_dot <- grid.arrange(p_example_trajectory,dot_plot,ncol=1)
 	ggsave("sample_trajectories_for_vel_point1267"%>%time_dot("pdf"), p_activation_and_dot, width=10, height=4, dpi=600)
+
+	# show range instead:
+
 
 	summary(pca_res)
 	print(pca_res)
