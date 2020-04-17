@@ -20,13 +20,12 @@ test_that('we can extract 100 seeds for a given speed multiconstraint #23', {
     lapply(multiconstraint_per_seed, function(constraint_with_seed_fixation){
     	points <- har_sample(constraint_with_seed_fixation, n_samples=1e1, eliminate=TRUE)
     	attr(points, "constraint_with_seed") <- constraint_with_seed_fixation
-    	seed_id <- attr(constraint_with_seed_fixation, "seed_activation")
-    	attr(points, "seed_activation") <- seed_id
+    	seed_id <- attr(constraint_with_seed_fixation, "seed_id")
+    	
     	browser()
-    	target_filepath <- sprintf("/Volumes/GoogleDrive/My\ Drive/outputs/seed_evals/%s.rda",colnames(seed_id)[1])
+    	target_filepath <- sprintf("/Volumes/GoogleDrive/My\ Drive/outputs/seed_evals/%s.rda",seed_id)
     	saveRDS(points, target_filepath)
     	})
-
 
         ex <- multiconstraint_per_seed[[44]]
     data(mtcars)
