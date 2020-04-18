@@ -74,19 +74,22 @@ test_that('pca for dimensionality of different slices', {
 	attr(seed_vs_noseed_trajectories,"velocity_limit") <- velocity_limit_fixed
 	saveRDS(seed_vs_noseed_trajectories, sprintf("/Volumes/GoogleDrive/My\ Drive/outputs/seed_vs_noseed_trajectories_at_speedlimit_%s.rds",velocity_limit_fixed))
 
-	p <- ggplot(seed_vs_noseed_trajectories ) 
-	p <- p + geom_histogram(aes(activation, fill=seed_id),alpha=0.5, bins=50, position="identity", data = seed_vs_noseed_trajectories[seed_id!="Not Seeded"]) 
-	p <- p + geom_histogram(aes(activation),alpha=0.5, bins=50, fill="black", position="identity", data = seed_vs_noseed_trajectories[seed_id=="Not Seeded"]) 
+	p <- ggplot(seed_vs_noseed_trajectories,aes(activation))
+	p <- p + geom_freqpoly(aes(y=..ncount.., fill=seed_id,col=seed_id, frame=seed_id),alpha=0.5, bins=30, position="identity", data = seed_vs_noseed_trajectories[seed_id!="Not Seeded"]) 
+	p <- p + geom_text(aes(summary(activation)))
+	p <- p + geom_freqpoly(aes(y=..ncount..), alpha=0.5, bins=30, col="black", position="identity", data = seed_vs_noseed_trajectories[seed_id=="Not Seeded"]) 
 	p <- p + facet_grid(task_index~factor(muscle, levels=muscle_name_per_index), scales="free_y", space="free_y") 
-	p <- p + theme_classic()
-	ggsave("seed_vs_noseed_trajectories"%>%time_dot("png"),p, width=20,height=20)
+	p <- p + theme_classic() + ylab("Within-bin Volume wrt to mode") + xlab("Muscle activation (0 to 1 is 0 to 100%)")
+	htmlwidgets::saveWidget(ggplotly(p), "index.html")
+	ggsave("seed_vs_noseed_trajectories"%>%time_dot("pdf"),p, width=20,height=20)
 
-	p <- ggplot(seed_vs_noseed_trajectories) 
-	p <- p + geom_bar(aes(sd(activation), fill=seed_id),alpha=0.5, bins=50, position="identity", data = seed_vs_noseed_trajectories[seed_id!="Not Seeded"]) 
-	p <- p + geom_histogram(aes(activation),alpha=0.5, bins=50, fill="black", position="identity", data = seed_vs_noseed_trajectories[seed_id=="Not Seeded"]) 
-	p <- p + facet_grid(task_index~factor(muscle, levels=muscle_name_per_index), scales="free_y", space="free_y") 
-	p <- p + theme_classic()
-	ggsave("seed_vs_noseed_trajectories"%>%time_dot("png"),p, width=20,height=20)
+	brian_hist <- function(x,val){
+		mid50 <- summary(x[,activation])[val]
+		return(mid50)
+	}
+
+	rr <- seed_vs_noseed_trajectories[,.(minus25=brian_hist(.SD,2),plus25=brian_hist(.SD,5)),by=.(seed_id,muscle,task_index)]
+	ggsave("seed_vs_noseed_densityplots"%>%time_dot("png"),p, width=20, height=20)
 
 
 	# show an example of some trajectories, and their derivatives
