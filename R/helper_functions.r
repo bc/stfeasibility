@@ -1,3 +1,5 @@
+muscles_in_order <- function() c("FDP","FDS","EIP","EDC","LUM","DI","PI")
+
 unit_cube_zoom <- function() coord_cartesian(xlim = c(0, 1), ylim = c(0, 1))
 
 ##' @see a_matrix_lhs_direction
@@ -27,7 +29,9 @@ ensure_folder_exists <- function(mainDir, subDir) {
 time_dot <- function(mystring, ending){
     paste0(mystring,"_", Sys.time(), ".",ending)
 }
- 
+
+divide_vector_by_max_of_vectors_abs_value <- function(vector) vector/max(abs(vector))
+
 ##' Dataframe to list of cols
 ##' @description derived from https://stackoverflow.com/questions/3492379/data-frame-rows-to-a-list
 ##' @param df Data frame
@@ -195,3 +199,25 @@ bisection_method <- function(a, b, tol, f, ...) {
 }
 
     
+
+
+    #helper functions from https://cran.r-project.org/web/packages/ggplot2/vignettes/extending-ggplot2.html
+    StatChull <- ggproto("StatChull", Stat,
+      compute_group = function(data, scales) {
+        data[chull(data$x, data$y), , drop = FALSE]
+      },
+      
+      required_aes = c("x", "y")
+    )
+    stat_chull <- function(mapping = NULL, data = NULL, geom = "polygon",
+                       position = "identity", na.rm = FALSE, show.legend = NA, 
+                       inherit.aes = TRUE, ...) {
+        layer(
+            stat = StatChull, data = data, mapping = mapping, geom = geom, 
+            position = position, show.legend = show.legend, inherit.aes = inherit.aes,
+            params = list(na.rm = na.rm, ...)
+        )
+    }
+
+    #/end helper functions from https://cran.r-project.org/web/packages/ggplot2/vignettes/extending-ggplot2.html
+
