@@ -25,37 +25,89 @@ seeded_points <- ex%>% har_sample(1000)
     })
 
 
+test_that("pca projections for each task-poltope projected", {
+	seed_vs_noseed_trajectories <- readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/seed_vs_noseed_trajectories_at_speedlimit_0.126767676767677.rds")
+	
+	#assemble nonseed trajectories
+	noseed_points_per_task<- lapply(0:6, function(task_i){
+		rr <- dcast(seed_vs_noseed_trajectories[task_index==task_i & seed_id=="Not Seeded"], muscle_trajectory~muscle,value.var="activation")
+		ggg<- rr[,c("FDP","FDS","EIP","EDC","LUM","DI","PI")]
+		return(ggg)
+		})
+	
+	# get PCA models for each of the 7 tasks
+	# project noseed onto the 7 models to create the base distribution where seed_id == "Not Seeded"
+	pca_results <- lapply(0:6, function(i){
+		# trim muscle_trajectory number off of the trajectory.
+		pca_res_nonseed <- prcomp(noseed_points_per_task[[i+1]], center=FALSE, scale=FALSE)
+		projected_points_from_nonseed <- scale(noseed_points_per_task[[i+1]], pca_res_nonseed$center, pca_res_nonseed$scale) %*% pca_res_nonseed$rotation
+		return(list(pca_res_nonseed = pca_res_nonseed, projected_points_from_nonseed=projected_points_from_nonseed, task_index=i))
+		})
+	nonseeded_proj_points_per_task <- pbmclapply(0:6, function(i){
+		dfa <-as.data.frame(pca_results[[i+1]]$projected_points_from_nonseed)
+		dfa$task_index = i
+		dfa$seed_id <- "Not Seeded"
+		return(dfa)
+		}) %>% rbindlist
+	
+	# project seeded trajectories onto the 7 models to create the experimental distribution, only do this for 1 of the seeds
+	ids <- unique(seed_vs_noseed_trajectories$seed_id)[1:10]
+	seeded_points_per_multiple_seedpoints <- lapply(ids, function(input_seed_id){
+	seeded_points_per_task <- lapply(0:6, function(task_i){
+		ddf <- dcast(seed_vs_noseed_trajectories[task_index==task_i & seed_id==input_seed_id], muscle_trajectory~muscle,value.var="activation")
+		ddf2 <- ddf[,c("FDP","FDS","EIP","EDC","LUM","DI","PI")]
+		pca_model_for_task <- pca_results[[task_i+1]]$pca_res_nonseed # extract the model
+		projected_points_from_nonseed <- scale(ddf2, pca_model_for_task$center, pca_model_for_task$scale) %*% pca_model_for_task$rotation %>% as.data.frame
+		projected_points_from_nonseed$task_index <- task_i
+		projected_points_from_nonseed$seed_id <- input_seed_id
+		return(projected_points_from_nonseed%>%data.table)
+		}) %>% rbindlist
+	return(seeded_points_per_task)}) %>% rbindlist
+	
+	nonseed_and_seed_projected <- rbind(nonseeded_proj_points_per_task, seeded_points_per_multiple_seedpoints)	
+	nonseed_and_seed_projected$seed_id <- factor(nonseed_and_seed_projected$seed_id)
+	#helper functions from https://cran.r-project.org/web/packages/ggplot2/vignettes/extending-ggplot2.html
+	StatChull <- ggproto("StatChull", Stat,
+	  compute_group = function(data, scales) {
+	    data[chull(data$x, data$y), , drop = FALSE]
+	  },
+	  
+	  required_aes = c("x", "y")
+	)
+	stat_chull <- function(mapping = NULL, data = NULL, geom = "polygon",
+	                   position = "identity", na.rm = FALSE, show.legend = NA, 
+	                   inherit.aes = TRUE, ...) {
+		layer(
+			stat = StatChull, data = data, mapping = mapping, geom = geom, 
+			position = position, show.legend = show.legend, inherit.aes = inherit.aes,
+			params = list(na.rm = na.rm, ...)
+		)
+	}
 
-test_that('pca for dimensionality of different slices', {
+	#/end helper functions from https://cran.r-project.org/web/packages/ggplot2/vignettes/extending-ggplot2.html
+
+	# color the projected coordinates by the distance that point is from the 2D plane?
+	p <- ggplot(nonseed_and_seed_projected, aes(PC1,PC2,col=seed_id)) 
+	p <-p + geom_point(size=0.1, alpha=0.5,shape=1, data=nonseed_and_seed_projected[seed_id!="Not Seeded"]) 
+	p <-p + geom_point(size=0.05, alpha=0.5,shape=1, col="grey", data=nonseed_and_seed_projected[seed_id=="Not Seeded"]) 
+	p <-p + facet_grid(~task_index)
+	p <-p + coord_fixed() 
+	p <-p + theme_classic()
+	p <- p + stat_chull(fill=NA, col="black")
+	p <- p + theme(panel.grid = element_blank(), panel.border = element_blank())
+
+	ggsave("figures/PC_view_of_st_tunnel"%>%time_dot("png"), p)
+	ggsave("figures/PC_view_of_st_tunnel"%>%time_dot("pdf"), p)
+
+
+	# TODO a .50 task
+
+	})
+test_that('effect of a seed on downstream polytope projections onto each muscle', {
     trajectories <- data.table(readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/ste_1e5_speed_13_timefin_09:04:05.556.rda"))
     velocity_limit_fixed <- trajectories$velocity_limit[1]
-	sampled_task0_points <- dcast(trajectories[task_index==0],muscle_trajectory~muscle, value.var="activation")
-	sampled_task1_points <- dcast(trajectories[task_index==1],muscle_trajectory~muscle, value.var="activation")
-	sampled_task2_points <- dcast(trajectories[task_index==2],muscle_trajectory~muscle, value.var="activation")
-	sampled_task3_points <- dcast(trajectories[task_index==3],muscle_trajectory~muscle, value.var="activation")
-	sampled_task4_points <- dcast(trajectories[task_index==4],muscle_trajectory~muscle, value.var="activation")
-	sampled_task5_points <- dcast(trajectories[task_index==5],muscle_trajectory~muscle, value.var="activation")
-	sampled_task6_points <- dcast(trajectories[task_index==6],muscle_trajectory~muscle, value.var="activation")
-	all_combined <- dcast(trajectories,muscle_trajectory~muscle+task_index, value.var="activation")
-	big_pca_res <- prcomp(all_combined[,2:ncol(all_combined)],scale=FALSE,center=FALSE)
-	trajectories_per_task_index <- list(sampled_task0_points,
-									sampled_task1_points,
-									sampled_task2_points,
-									sampled_task3_points,
-									sampled_task4_points,
-									sampled_task5_points,
-									sampled_task6_points)
-	pca_results <- lapply(1:length(trajectories_per_task_index), function(i){
-		# trim muscle_trajectory number off of the trajectory.
-		pca_res_nonseed <- prcomp(trajectories_per_task_index[[i]][,2:8], center=FALSE, scale=FALSE)
-		projected_points_from_nonseed <- scale(sampled_task0_points[,2:8], pca_res_nonseed$center, pca_res_nonseed$scale) %*% pca_res_nonseed$rotation
-		return(list(pca_res_nonseed = pca_res_nonseed, projected_points_from_nonseed=projected_points_from_nonseed, task_index=i-1))
-		})
-	proj_points_per_task <- pbmclapply(1:length(pca_results), function(i){
-		df <-as.data.frame(pca_results[[i]]$projected_points_from_nonseed)
-		df$task_index = i-1
-		return(df)
-		}) %>% rbindlist
+
+	
 
 	trajectories_per_seed <- lapply(dir("/Volumes/GoogleDrive/My\ Drive/outputs/seed_evals/", full.names=TRUE), readRDS)
 	splitup <- pblapply(trajectories_per_seed[1:10], function(x){
@@ -70,26 +122,36 @@ test_that('pca for dimensionality of different slices', {
 	trajectories[,("seed_id") := "Not Seeded"]
 	trajectories[,velocity_limit:=NULL]
 	seed_vs_noseed_trajectories <- rbind(seed_based_trajectories,trajectories[muscle_trajectory%in%seq(1,10000)])
+	#TODO rm
 	seed_vs_noseed_trajectories[,("is_constrained_by_seed"):= seed_id == "Not Seeded"]
 	attr(seed_vs_noseed_trajectories,"velocity_limit") <- velocity_limit_fixed
-	saveRDS(seed_vs_noseed_trajectories, sprintf("/Volumes/GoogleDrive/My\ Drive/outputs/seed_vs_noseed_trajectories_at_speedlimit_%s.rds",velocity_limit_fixed))
+	# saveRDS(seed_vs_noseed_trajectories, sprintf("/Volumes/GoogleDrive/My\ Drive/outputs/seed_vs_noseed_trajectories_at_speedlimit_%s.rds",velocity_limit_fixed))
+	seed_vs_noseed_trajectories<- readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/seed_vs_noseed_trajectories_at_speedlimit_0.126767676767677.rds")
 
 	p <- ggplot(seed_vs_noseed_trajectories,aes(activation))
-	p <- p + geom_freqpoly(aes(y=..ncount.., fill=seed_id,col=seed_id, frame=seed_id),alpha=0.5, bins=30, position="identity", data = seed_vs_noseed_trajectories[seed_id!="Not Seeded"]) 
-	p <- p + geom_text(aes(summary(activation)))
+	p <- p + geom_freqpoly(aes(y=..ncount.., fill=seed_id,col=seed_id, frame=seed_id),alpha=0.5, bins=30, position="identity", data = seed_vs_noseed_trajectories[seed_id!="Not Seeded"])
 	p <- p + geom_freqpoly(aes(y=..ncount..), alpha=0.5, bins=30, col="black", position="identity", data = seed_vs_noseed_trajectories[seed_id=="Not Seeded"]) 
 	p <- p + facet_grid(task_index~factor(muscle, levels=muscle_name_per_index), scales="free_y", space="free_y") 
 	p <- p + theme_classic() + ylab("Within-bin Volume wrt to mode") + xlab("Muscle activation (0 to 1 is 0 to 100%)")
-	htmlwidgets::saveWidget(ggplotly(p), "index.html")
 	ggsave("seed_vs_noseed_trajectories"%>%time_dot("pdf"),p, width=20,height=20)
+	htmlwidgets::saveWidget(ggplotly(p), "index.html")
 
+	#just show 3
+
+	p <- ggplot(seed_vs_noseed_trajectories,aes(activation))
+	p <- p + geom_freqpoly(aes(y=..ncount.., col=seed_id), alpha=0.5, bins=30, position="identity", data = seed_vs_noseed_trajectories[seed_id%in%c("X13121","Not Seeded",  "X15778", "X14309") & seed_id!="Not Seeded"])
+	p <- p + geom_freqpoly(aes(y=..ncount..), alpha=0.5, bins=30, col="black", position="identity", data = seed_vs_noseed_trajectories[seed_id%in%c("X13121","Not Seeded",  "X15778", "X14309") & seed_id=="Not Seeded"]) 
+	p <- p + facet_grid(task_index~factor(muscle, levels=muscle_name_per_index)) + coord_fixed()
+	p <- p + theme_classic() + ylab("Within-bin Volume wrt to mode") + xlab("Muscle activation (0 to 1 is 0 to 100%)")
+	ggsave("three_interesting_examples_seed_vs_noseed_trajectories"%>%time_dot("pdf"),p, width=8,height=10)
+	
 	brian_hist <- function(x,val){
 		mid50 <- summary(x[,activation])[val]
 		return(mid50)
 	}
 
-	rr <- seed_vs_noseed_trajectories[,.(minus25=brian_hist(.SD,2),plus25=brian_hist(.SD,5)),by=.(seed_id,muscle,task_index)]
-	ggsave("seed_vs_noseed_densityplots"%>%time_dot("png"),p, width=20, height=20)
+	rr <- seed_vs_noseed_trajectories[,.(minus25=brian_hist(.SD,2), plus25=brian_hist(.SD,5)),by=.(seed_id,muscle,task_index)]
+	ggsave("seed_vs_noseed_densityplots"%>%time_dot("png"), p, width=20, height=20)
 
 
 	# show an example of some trajectories, and their derivatives
