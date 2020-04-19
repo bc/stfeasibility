@@ -180,15 +180,13 @@ plot_ffs <- function(ffs_points, tasks_df){
     p <- p + geom_path(data = tasks_df, aes(x=Fx, y = Fz), col="green")
     ggsave("figures/ffs.pdf")
 }
-st_with_vel <- function(discrete_speed_limit, har_n) {
+st_with_vel <- function(input_H_matrix, discrete_speed_limit, har_n) {
     # loop_update(discrete_speed_limit)
     message(sprintf("BEGIN %s",discrete_speed_limit))
-    my_H_matrix <- read.csv("data/fvc_hentz_2002.csv", row.names=1) %>% as.matrix
-    my_H_matrix <- my_H_matrix
     # H_matrix
-    st_constr_str <- force_cos_ramp_constraint(my_H_matrix, bounds_tuple_of_numeric, c(10,0,0,0), discrete_speed_limit, discrete_speed_limit, n_task_values = 7, cycles_per_second=10, eliminate = FALSE)
+    st_constr_str <- force_cos_ramp_constraint(input_H_matrix, bounds_tuple_of_numeric, c(10,0,0,0), discrete_speed_limit, discrete_speed_limit, n_task_values = 7, cycles_per_second=10, eliminate = FALSE)
     extremes <- lapply(st_constr_str$tasks_and_constraints$constraints, findExtremePoints)
-    ffs_points <- gen_7d_ffs(my_H_matrix)
+    ffs_points <- gen_7d_ffs(input_H_matrix)
     plot_ffs(ffs_points, st_constr_str$tasks_and_constraints$tasks * 10)
     res <- st_constr_str$nonredundant_constr %>% eliminate_redundant(7)
 

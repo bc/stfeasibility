@@ -3,7 +3,7 @@ test_that('we can extract 100 seeds for a given speed multiconstraint #23', {
 	library(data.table)
     n_seeds <- 100
     #speed is fixed across this entire run below; is dependent on the rda used
-    st_res <- readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/ste_1e5_speed_13_timefin_09:04:05.556.rda")
+    st_res <- st_with_vel(my_H_matrix, 0.126767676, har_n=1e5)
     H_multiconstraint <- attr(st_res, "constraints_and_tasks")$nonredundant_constr
     activation_per_seed <- extract_n_seeds_from_rda_ste(st_res, 10)
     multiconstraint_per_seed <- lapply(seq(1,ncol(activation_per_seed)), function(task_0_seed_activation){
@@ -17,7 +17,7 @@ test_that('we can extract 100 seeds for a given speed multiconstraint #23', {
     	})
 
 
-    result_filepaths <- pbmclapply(multiconstraint_per_seed, seed_sample_and_save)
+    result_filepaths <- pbmclapply(multiconstraint_per_seed, seed_sample_and_save, har_samples_per_seed = 1e4, mc.cores=detectCores(all.tests = FALSE, logical = TRUE))
 
        
 seeded_points <- ex%>% har_sample(1000)

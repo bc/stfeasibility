@@ -5,30 +5,29 @@ test_that('full_st histograms', {
     # ~.05 every 10ms, so 50ms = 25% change in activation
     setwd('/Users/Olive/Documents/GitHub/bc/stfeasibility')
 
-    speeds <- sample(seq(0.05,1,length.out=100))
+    speeds <- sample(seq(0.05,1,length.out=100)) # this is the one that produced 100 speeds, unseeded with lipschitz constraints.
+    speeds <- sample(seq(0.05,1,length.out=3))
     loop_update(1.0)
-    for (i in seq(1,100)) {
+    destination <- "/Volumes/GoogleDrive/My\ Drive/outputs/apr18_outputs" #don't include trailing slash
+    destinations <- pblapply(seq(1,100),function(i){
         message(sprintf('CURRENT I: %s',1))
-        out_filepath <- sprintf("outputs/ste_1e5_speed_%s_timefin_%s.rda",i,format(Sys.time(), "%H:%M:%OS3"))
-        saveRDS(st_with_vel(speeds[i],har_n=1e5),out_filepath)
-        system("rclone copy outputs remote:outputs", wait=TRUE)
+        out_filepath <- "%s/ste_1e5_speed_%s_timefin_%s.rda"%--%c(destination, i,format(Sys.time(), "%H:%M:%OS3"))
+        message('Saving to %s' %--% out_filepath)
+        my_H_matrix <- read.csv("data/fvc_hentz_2002.csv", row.names=1) %>% as.matrix
+        saveRDS(st_with_vel(my_H_matrix, speeds[i], har_n=1e5),out_filepath)
+        # on MSI
+        # system("rclone copy outputs remote:outputs", wait=TRUE)
         system(sprintf("rm %s",out_filepath), wait=TRUE)
         gc()
-    }
+        return(out_filepath)
+    })
 
-
-
-
-    #takes a long time
-    spatiotemporal_evaluations <- pblapply(speeds, st_with_vel, har_n=1e5)
-    #on MSI
-    system("rclone copy outputs remote:outputs")
-
-    spatiotemporal_evaluations <- readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/100kvals_task_A_10N_mat_A.rda")
-    runplots(spatiotemporal_evaluations)
-    run_step_speed_distributions_plot(spatiotemporal_evaluations)
-
-
+    
+test_that("we can plot things about the many tasks", {
+    library(data.table)
+    six_speed_spatiotemporal_evaluations <- readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/100kvals_task_A_10N_mat_A.rda")
+    runplots(six_speed_spatiotemporal_evaluations)
+    run_step_speed_distributions_plot(six_speed_spatiotemporal_evaluations)
 })
 
 
@@ -45,7 +44,7 @@ test_that('minitest', {
         write.csv(tall_segment, my_filename)
         print('wrote to csv:')
         print(my_filename)
-    }, mc.cores=8)  
+    }, mc.cores=detectCores(all.tests = FALSE, logical = TRUE))  
 })
 
 library(pracma)
@@ -65,7 +64,7 @@ test_that('very submaximal forces', {
         write.csv(tall_segment, my_filename)
         print('wrote to csv:')
         print(my_filename)
-    }, mc.cores=8)}, interval=300)
+    }, mc.cores=detectCores(all.tests = FALSE, logical = TRUE))}, interval=300)
 })
 
 context('fullst 20')
@@ -82,7 +81,7 @@ test_that('full_ st histograms_20', {
         tall_segment <- har_dataframe_force_cos(H_matrix, bounds_tuple_of_numeric, speed_limit,speed_limit,n_task_values, har_n, vector_out)
         print('wroteCSV')
         write.csv(tall_segment, my_filename)
-    }, mc.cores=8)}, interval=300)
+    }, mc.cores=detectCores(all.tests = FALSE, logical = TRUE))}, interval=300)
 })
 
 
