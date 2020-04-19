@@ -39,4 +39,23 @@ seed_sample_and_save <- function(constraint_with_seed_fixation, target_string = 
     	target_filepath <- sprintf(target_string,seed_id)
     	saveRDS(points, target_filepath)
     	return(target_filepath)
-    	}
+}
+
+combine_unseeded_and_seeded_data_into_id_tall_df <- function(trajectories_unseeded, trajectories_per_seed){
+	splitup <- pblapply(trajectories_per_seed[1:10], function(x){
+		ddf <- trajectory_har_df_melt(x,7) %>% data.table
+		# add a column called seed_id so we can keep track of where these 10k trajectories came from
+		seed_id <- attr(attr(x, "constraint_with_seed"),"seed_id")
+		ddf[, ("seed_id") := seed_id]
+		return(ddf)
+	})
+
+	seed_based_trajectories <- rbindlist(splitup)
+	trajectories[,("seed_id") := "Not Seeded"]
+	trajectories[,velocity_limit:=NULL]
+	seed_vs_noseed_trajectories <- rbind(seed_based_trajectories,trajectories[muscle_trajectory%in%seq(1,10000)])
+	#TODO rm
+	seed_vs_noseed_trajectories[,("is_constrained_by_seed"):= seed_id == "Not Seeded"]
+	attr(seed_vs_noseed_trajectories,"velocity_limit") <- velocity_limit_fixed
+	return(seed_vs_noseed_trajectories)
+}

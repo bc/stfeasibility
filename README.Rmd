@@ -110,3 +110,10 @@ benchmarks <- cbind(num_tasks =c(3,4,5,6,7,12,13,14,15), minutes =c(3.185497,
 2565.451,
 4164.274))
 
+
+
+
+timing:
+
+100k trajectories from 49 dimensional space = 5 minutes of point picking
+10k trajectories from 49 dimensional space = 2 minutes of point picking
