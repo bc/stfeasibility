@@ -45,36 +45,16 @@ test_that('we can combine the unseeded and seeded trajectories', {
 test_that("seed vs noseed from scratch", {
 	library(data.table)
     #speed is fixed across this entire run below; is dependent on the rda used
-    fixed_velocity_constraint_speed <- .126767
-    my_H_matrix <- read.csv("data/fvc_hentz_2002.csv", row.names=1) %>% as.matrix
-    tic <- Sys.time()
-    st_res <- st_with_vel(my_H_matrix, fixed_velocity_constraint_speed, har_n=1e5)
-    message(print(Sys.time() - tic))
-    H_multiconstraint <- attr(st_res, "constraints_and_tasks")$nonredundant_constr
-    activation_per_seed <- extract_n_seeds_from_rda_ste(st_res, 10)
-    multiconstraint_per_seed <- lapply(seq(1,ncol(activation_per_seed)), function(task_0_seed_activation){
-    	# trim top which has task0 wrench requirements
-    	seed_a <- activation_per_seed[,task_0_seed_activation]
-    	seed_id <- colnames(activation_per_seed)[task_0_seed_activation]
-    	res <- merge_constraints(trim_top_of_constraint(H_multiconstraint,22), assemble_equality_with_seed_point(seed_id, seed_a))
-    	attr(res, "seed_activation") <- seed_a
-    	attr(res, "seed_id") <- seed_id
-    	return(res)
-    	})
-    result_filepaths <- pbmclapply(multiconstraint_per_seed, seed_sample_and_save,
-     target_string = "outputs/seed_evals_medium_speed_%s.rda",
-     har_samples_per_seed = 1e4,
-     mc.cores=detectCores(all.tests = FALSE, logical = TRUE))
+    speeds <- sample(seq(0.05,1,length.out=30))
+    lapply(speeds,seed_vs_noseed_diff_speeds)
 
-	trajectories_per_seed <- lapply(result_filepaths, readRDS)
-	seed_vs_noseed_trajectories <- combine_unseeded_and_seeded_data_into_id_tall_df(trajectories_unseeded=st_res, trajectories_per_seed=trajectories_per_seed)
-	saveRDS(seed_vs_noseed_trajectories, "/Volumes/GoogleDrive/My\ Drive/outputs/medium_speedlimit_seed_vs_noseed.rds")
 
 	})
 test_that('effect of a seed on downstream polytope projections onto each muscle', {
 	seed_vs_noseed_trajectories <- readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/seed_vs_noseed_trajectories_at_speedlimit_0.126767676767677.rds")
     velocity_limit_fixed <- attr(seed_vs_noseed_trajectories,"velocity_limit")
     p <- gen_freqpoly_seed_vs_unseeded(seed_vs_noseed_trajectories, 1:3)
+    p <- p + ggtitle("Velocity lim: %s"%--%velocity_limit_fixed)
     
 	ggsave("seed_vs_noseed_trajectories"%>%time_dot("pdf"),p, width=20,height=20)
 	htmlwidgets::saveWidget(ggplotly(p), "index.html")
