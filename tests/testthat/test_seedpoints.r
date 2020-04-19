@@ -60,11 +60,10 @@ test_that("seed vs noseed from scratch", {
     	attr(res, "seed_id") <- seed_id
     	return(res)
     	})
-    result_filepaths <- pbmclapply(multiconstraint_per_seed, seed_sample_and_save,
+    result_filepaths <- pblapply(multiconstraint_per_seed, seed_sample_and_save,
      target_string = "/Volumes/GoogleDrive/My\ Drive/outputs/seed_evals_medium_speed/%s.rda",
-     har_samples_per_seed = 1e4,
-     mc.cores=detectCores(all.tests = FALSE,
-     logical = TRUE))
+     har_samples_per_seed = 1e4),
+     mc.cores=detectCores(all.tests = FALSE, logical = TRUE))
 
 	trajectories_per_seed <- lapply(result_filepaths, readRDS)
 	seed_vs_noseed_trajectories <- combine_unseeded_and_seeded_data_into_id_tall_df(trajectories_unseeded=st_res, trajectories_per_seed=trajectories_per_seed)
