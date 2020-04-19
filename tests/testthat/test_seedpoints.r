@@ -29,11 +29,11 @@ test_that("pca projections for each task-poltope projected", {
 	seed_vs_noseed_trajectories <- readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/seed_vs_noseed_trajectories_at_speedlimit_0.126767676767677.rds")
 	generate_pca_projection_plots(seed_vs_noseed_trajectories, "speedlimit_pt1267")
 	})
-test_that('effect of a seed on downstream polytope projections onto each muscle', {
-    trajectories <- data.table(readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/ste_1e5_speed_13_timefin_09:04:05.556.rda"))
-    velocity_limit_fixed <- trajectories$velocity_limit[1]
-    
-	trajectories_per_seed <- lapply(dir("/Volumes/GoogleDrive/My\ Drive/outputs/seed_evals/", full.names=TRUE), readRDS)
+
+
+generate_seed_vs_noseed_trajectories_big_df <- function(trajectories_unseeded, trajectories_per_seed){
+
+
 	splitup <- pblapply(trajectories_per_seed[1:10], function(x){
 		ddf <- trajectory_har_df_melt(x,7) %>% data.table
 		# add a column called seed_id so we can keep track of where these 10k trajectories came from
@@ -49,8 +49,25 @@ test_that('effect of a seed on downstream polytope projections onto each muscle'
 	#TODO rm
 	seed_vs_noseed_trajectories[,("is_constrained_by_seed"):= seed_id == "Not Seeded"]
 	attr(seed_vs_noseed_trajectories,"velocity_limit") <- velocity_limit_fixed
-	# saveRDS(seed_vs_noseed_trajectories, sprintf("/Volumes/GoogleDrive/My\ Drive/outputs/seed_vs_noseed_trajectories_at_speedlimit_%s.rds",velocity_limit_fixed))
-	seed_vs_noseed_trajectories<- readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/seed_vs_noseed_trajectories_at_speedlimit_0.126767676767677.rds")
+	return(seed_vs_noseed_trajectories)
+}
+test_that('we can combine the unseeded and seeded trajectories', {
+    trajectories <- data.table(readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/ste_1e5_speed_13_timefin_09:04:05.556.rda"))
+    velocity_limit_fixed <- trajectories$velocity_limit[1]
+    
+	trajectories_per_seed <- lapply(dir("/Volumes/GoogleDrive/My\ Drive/outputs/seed_evals/", full.names=TRUE), readRDS)
+	seed_vs_noseed_trajectories <- generate_seed_vs_noseed_trajectories_big_df(trajectories_unseeded=trajectories, trajectories_per_seed=trajectories_per_seed)
+	saveRDS(seed_vs_noseed_trajectories, sprintf("/Volumes/GoogleDrive/My\ Drive/outputs/seed_vs_noseed_trajectories_at_speedlimit_%s.rds",velocity_limit_fixed))
+}
+)
+test_that('effect of a seed on downstream polytope projections onto each muscle', {
+    trajectories <- data.table(readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/ste_1e5_speed_13_timefin_09:04:05.556.rda"))
+    velocity_limit_fixed <- trajectories$velocity_limit[1]
+    
+	trajectories_per_seed <- lapply(dir("/Volumes/GoogleDrive/My\ Drive/outputs/seed_evals/", full.names=TRUE), readRDS)
+	seed_vs_noseed_trajectories <- generate_seed_vs_noseed_trajectories_big_df(trajectories_unseeded=trajectories, trajectories_per_seed=trajectories_per_seed)
+	saveRDS(seed_vs_noseed_trajectories, sprintf("/Volumes/GoogleDrive/My\ Drive/outputs/seed_vs_noseed_trajectories_at_speedlimit_%s.rds",velocity_limit_fixed))
+	seed_vs_noseed_trajectories <- readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/seed_vs_noseed_trajectories_at_speedlimit_0.126767676767677.rds")
 
 	p <- ggplot(seed_vs_noseed_trajectories,aes(activation))
 	p <- p + geom_freqpoly(aes(y=..ncount.., fill=seed_id,col=seed_id, frame=seed_id),alpha=0.5, bins=30, position="identity", data = seed_vs_noseed_trajectories[seed_id!="Not Seeded"])
