@@ -1,5 +1,5 @@
 require(data.table)
-extract_n_seeds_from_rda_ste <- function(st_res, n){
+extract_n_seeds_from_rda_ste <- function(st_res, n_seeds){
 	require(data.table)
     seeds <- sample(1:max(st_res$muscle_trajectory),n_seeds,replace=FALSE)
     st_res_dt <- data.table(st_res)
@@ -31,7 +31,8 @@ trim_top_of_constraint <- function(constraint, nrows_to_rm){
 	newversion$rhs <- constraint$rhs[(nrows_to_rm+1):length(constraint$rhs)]
 	return(newversion)
 }
-seed_sample_and_save <- function(constraint_with_seed_fixation, har_samples_per_seed, target_string = "/Volumes/GoogleDrive/My\ Drive/outputs/seed_evals/%s.rda"){
+#target string must have a %s so it can put the ID in there
+seed_sample_and_save <- function(constraint_with_seed_fixation, har_samples_per_seed, target_string){
     	points <- constraint_with_seed_fixation %>% har_sample(har_samples_per_seed, eliminate=TRUE)
     	attr(points, "constraint_with_seed") <- constraint_with_seed_fixation
     	seed_id <- attr(constraint_with_seed_fixation, "seed_id")

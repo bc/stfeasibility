@@ -10,9 +10,8 @@ get_deltas_dt <- function(seed_0, dataset){
             }) %>% dcrb
 
         add_trailing_0 <- function(v) c(v,0)
-        norms_per_txn <- apply(diffsets,2, pracma::Norm,2) %>% add_trailing_0 %>% as.numeric
         abs_per_txn <- apply(diffsets,2, function(v) max(abs(v))) %>% add_trailing_0 %>% as.numeric
-        res <- data.table(normval = norms_per_txn, max_abs_dot = abs_per_txn, transition_index=task_transition_idx())
+        res <- data.table(max_abs_dot = abs_per_txn, transition_index=task_transition_idx())
         return(res)
 }
 task_transition_idx <- function() {c("t0_t1",
@@ -25,9 +24,9 @@ task_transition_idx <- function() {c("t0_t1",
 run_step_speed_distributions_plot <- function(spatiotemporal_evaluations){
     library(data.table)
     points <- rbindlist(spatiotemporal_evaluations)
-    points$velocity_limit <- factor(points$velocity_limit, levels=rev(as.character(points$speeds)))
-    points <- data.table(points)
-    browser()
+    velocities <- as.numeric(points$velocity_limit)
+    sorted_speed_levels <- sort(unique(velocities), decreasing=TRUE)
+    points[,velocity_limit:= factor(points$velocity_limit, levels=sorted_speed_levels)]
     points_with_dot <- points[,.( task_index, activation, transition_index=task_transition_idx(), dot = as.numeric(c(diff(activation),0))), by=.(muscle_trajectory, muscle, velocity_limit)]
 
     # within a given muscle trajectory, describe the norm of the transition from moment to moment
@@ -35,12 +34,15 @@ run_step_speed_distributions_plot <- function(spatiotemporal_evaluations){
 
     #across analyses from the seed trajectory (a view from the 'transect', which is the predefined trajectory of the first har point sampled)
     seed_0 <- points[velocity_limit==1.0 & muscle_trajectory==1, .(muscle,task_index,activation)]
+    message('computing deltas dataframe')
     across <- points[muscle_trajectory!=1, get_deltas_dt(seed_0, .SD), by=.(velocity_limit, muscle_trajectory)]
     setcolorder(across, colnames(within))
-    within_and_across_within <- rbindlist(list(within, across), id=TRUE)
+    across[,source:="across"]
+    within[,source:="within"]
+    within_and_across_within <- rbindlist(list(within, across))
     
-    p4 <- ggplot(within_and_across_within[transition_index!="end_padding"], aes(max_abs_dot, fill=as.factor(.id), group=as.factor(.id))) 
-    p4 <- p4 + geom_histogram(bins=100, alpha=0.7,position="identity")
+    p4 <- ggplot(within_and_across_within[transition_index!="end_padding"], aes(max_abs_dot, fill=as.factor(source), group=as.factor(source))) 
+    p4 <- p4 + geom_histogram(aes(y=..ncount..),bins=100, alpha=0.7,position="identity")
     p4 <- p4 + facet_grid(velocity_limit~transition_index, scales = "free", space="free")
     p4 <- p4 + theme_classic() + xlab("maximum absolute delta observed within a given transition, \n where all operations are performed from id=1 (red) within each single activation trajectory and \n id=2(blue) across, with a single seed point across all of the other trajectories.")
     p4 <- p4 + ylab("number of transitions") + theme_bw()

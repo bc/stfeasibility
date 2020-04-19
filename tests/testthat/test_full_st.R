@@ -21,7 +21,6 @@ test_that('full_st histograms', {
         gc()
         return(out_filepath)
     })
-
     
 test_that("we can plot things about the many tasks", {
     library(data.table)
