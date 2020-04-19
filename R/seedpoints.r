@@ -42,20 +42,35 @@ seed_sample_and_save <- function(constraint_with_seed_fixation, har_samples_per_
 }
 
 combine_unseeded_and_seeded_data_into_id_tall_df <- function(trajectories_unseeded, trajectories_per_seed){
-	splitup <- pblapply(trajectories_per_seed[1:10], function(x){
+	#prepare unseeded portion
+	velocity_limit <- attr(trajectories_unseeded,"speed_limit")
+	unseeded_dt <- data.table(trajectories_unseeded)
+	rm(trajectories_unseeded) # reduce memory usage
+	unseeded_dt[,seed_id := "Not Seeded"]
+	unseeded_dt[,velocity_limit:=NULL]
+
+	seed_based_trajectories <- pblapply(trajectories_per_seed[1:10], function(x){
 		ddf <- trajectory_har_df_melt(x,7) %>% data.table
 		# add a column called seed_id so we can keep track of where these 10k trajectories came from
 		seed_id <- attr(attr(x, "constraint_with_seed"),"seed_id")
-		ddf[, ("seed_id") := seed_id]
+		ddf[,seed_id := seed_id]
 		return(ddf)
-	})
+	}) %>% rbindlist
 
-	seed_based_trajectories <- rbindlist(splitup)
-	trajectories[,("seed_id") := "Not Seeded"]
-	trajectories[,velocity_limit:=NULL]
-	seed_vs_noseed_trajectories <- rbind(seed_based_trajectories,trajectories[muscle_trajectory%in%seq(1,10000)])
-	#TODO rm
-	seed_vs_noseed_trajectories[,("is_constrained_by_seed"):= seed_id == "Not Seeded"]
-	attr(seed_vs_noseed_trajectories,"velocity_limit") <- velocity_limit_fixed
+	seed_vs_noseed_trajectories <- rbind(seed_based_trajectories,unseeded_dt[muscle_trajectory%in%seq(1,10000)])
+	attr(seed_vs_noseed_trajectories,"velocity_limit") <- velocity_limit
 	return(seed_vs_noseed_trajectories)
 }
+
+gen_freqpoly_seed_vs_unseeded <- function(seed_vs_noseed_trajectories, seed_id_interesting_idx = c(1,2,3)){
+	    seed_id_interesting <- unique(seed_vs_noseed_trajectories$seed_id)[seed_id_interesting_idx]
+	    noseed_selection <- seed_vs_noseed_trajectories[seed_id%in%seed_id_interesting & seed_id!="Not Seeded"]
+		p <- ggplot(seed_vs_noseed_trajectories,aes(activation))
+		p <- p + geom_freqpoly(aes(y=..ncount.., fill=seed_id, col=seed_id, frame=seed_id),
+			alpha=0.5, bins=30, position="identity", data = noseed_selection)
+		p <- p + geom_freqpoly(aes(y=..ncount..), alpha=0.5, bins=30, col="black", position="identity", data = seed_vs_noseed_trajectories[seed_id=="Not Seeded"]) 
+		p <- p + facet_grid(task_index~factor(muscle, levels=muscle_name_per_index), scales="free_y", space="free_y") 
+		p <- p + theme_classic() + ylab("Within-bin Volume wrt to mode") + xlab("Muscle activation (0 to 1 is 0 to 100%)")
+		return(p)
+    }
+   

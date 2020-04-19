@@ -47,8 +47,9 @@ test_that("seed vs noseed from scratch", {
     #speed is fixed across this entire run below; is dependent on the rda used
     fixed_velocity_constraint_speed <- .126767
     my_H_matrix <- read.csv("data/fvc_hentz_2002.csv", row.names=1) %>% as.matrix
-    message('expect 10m on mac')
+    tic <- Sys.time()
     st_res <- st_with_vel(my_H_matrix, fixed_velocity_constraint_speed, har_n=1e5)
+    message(print(Sys.time() - tic))
     H_multiconstraint <- attr(st_res, "constraints_and_tasks")$nonredundant_constr
     activation_per_seed <- extract_n_seeds_from_rda_ste(st_res, 10)
     multiconstraint_per_seed <- lapply(seq(1,ncol(activation_per_seed)), function(task_0_seed_activation){
@@ -60,9 +61,9 @@ test_that("seed vs noseed from scratch", {
     	attr(res, "seed_id") <- seed_id
     	return(res)
     	})
-    result_filepaths <- pblapply(multiconstraint_per_seed, seed_sample_and_save,
-     target_string = "/Volumes/GoogleDrive/My\ Drive/outputs/seed_evals_medium_speed/%s.rda",
-     har_samples_per_seed = 1e4),
+    result_filepaths <- pbmclapply(multiconstraint_per_seed, seed_sample_and_save,
+     target_string = "outputs/seed_evals_medium_speed_%s.rda",
+     har_samples_per_seed = 1e4,
      mc.cores=detectCores(all.tests = FALSE, logical = TRUE))
 
 	trajectories_per_seed <- lapply(result_filepaths, readRDS)
@@ -73,13 +74,8 @@ test_that("seed vs noseed from scratch", {
 test_that('effect of a seed on downstream polytope projections onto each muscle', {
 	seed_vs_noseed_trajectories <- readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/seed_vs_noseed_trajectories_at_speedlimit_0.126767676767677.rds")
     velocity_limit_fixed <- attr(seed_vs_noseed_trajectories,"velocity_limit")
-
-	p <- ggplot(seed_vs_noseed_trajectories,aes(activation))
-	p <- p + geom_freqpoly(aes(y=..ncount.., fill=seed_id,col=seed_id, frame=seed_id),
-		alpha=0.5, bins=30, position="identity", data = seed_vs_noseed_trajectories[seed_id!="Not Seeded"])
-	p <- p + geom_freqpoly(aes(y=..ncount..), alpha=0.5, bins=30, col="black", position="identity", data = seed_vs_noseed_trajectories[seed_id=="Not Seeded"]) 
-	p <- p + facet_grid(task_index~factor(muscle, levels=muscle_name_per_index), scales="free_y", space="free_y") 
-	p <- p + theme_classic() + ylab("Within-bin Volume wrt to mode") + xlab("Muscle activation (0 to 1 is 0 to 100%)")
+    p <- gen_freqpoly_seed_vs_unseeded(seed_vs_noseed_trajectories, 1:3)
+    
 	ggsave("seed_vs_noseed_trajectories"%>%time_dot("pdf"),p, width=20,height=20)
 	htmlwidgets::saveWidget(ggplotly(p), "index.html")
 
