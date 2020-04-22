@@ -1,6 +1,7 @@
 generate_pca_projection_plots <- function(seed_vs_noseed_trajectories_rda_str, suffix=""){
 		
-	
+	library(data.table)
+	seed_vs_noseed_trajectories_rda_str <- seed_vs_noseed_trajectories_rda_str%>%data.table
 	message("Assembling nonseed trajectories")
 	noseed_points_per_task<- lapply(0:6, function(task_i){
 		rr <- dcast(seed_vs_noseed_trajectories_rda_str[task_index==task_i & seed_id=="Not Seeded"], muscle_trajectory~muscle,value.var="activation")

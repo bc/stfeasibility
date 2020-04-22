@@ -11,7 +11,7 @@ test_that('full_st histograms', {
     destination <- "/Volumes/GoogleDrive/My\ Drive/outputs/apr18_outputs" #don't include trailing slash
     destinations <- pblapply(seq(1,100),function(i){
         message(sprintf('CURRENT I: %s',1))
-        out_filepath <- "%s/ste_1e5_speed_%s_timefin_%s.rda"%--%c(destination, i,format(Sys.time(), "%H:%M:%OS3"))
+        out_filepath <- "%s/ste_1e5_speed_%s_timefin_%s.rds"%--%c(destination, i,format(Sys.time(), "%H:%M:%OS3"))
         message('Saving to %s' %--% out_filepath)
         my_H_matrix <- read.csv("data/fvc_hentz_2002.csv", row.names=1) %>% as.matrix
         saveRDS(st_with_vel(my_H_matrix, speeds[i], har_n=1e5),out_filepath)
@@ -24,7 +24,7 @@ test_that('full_st histograms', {
     
 test_that("we can plot things about the many tasks", {
     library(data.table)
-    six_speed_spatiotemporal_evaluations <- readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/100kvals_task_A_10N_mat_A.rda")
+    six_speed_spatiotemporal_evaluations <- readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/100kvals_task_A_10N_mat_A.rds")
     runplots(six_speed_spatiotemporal_evaluations)
     run_step_speed_distributions_plot(six_speed_spatiotemporal_evaluations)
 })

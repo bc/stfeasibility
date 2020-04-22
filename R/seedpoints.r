@@ -1,5 +1,5 @@
 require(data.table)
-extract_n_seeds_from_rda_ste <- function(st_res, n_seeds){
+extract_n_seeds_from_rds_ste <- function(st_res, n_seeds){
 	require(data.table)
     seeds <- sample(1:max(st_res$muscle_trajectory),n_seeds,replace=FALSE)
     st_res_dt <- data.table(st_res)
@@ -14,7 +14,7 @@ extract_n_seeds_from_rda_ste <- function(st_res, n_seeds){
 }
 
 #puts a diag and -diag equality with the activations in task_0 for the input activations7
-assemble_equality_with_seed_point <- function(seed_id, activations7){
+assemble_equality_with_seed_point <- function(seed_id, activations7,H_multiconstraint){
 	library(data.table)
 	equalityconst <- cbind(diag(7), matrix(0,7,42))
 	rownames(equalityconst) <- rep(paste0(seed_id,"_task0_equality_w_seed_const"), nrow(equalityconst))
@@ -87,7 +87,7 @@ seed_vs_noseed_diff_speeds<- function(vel){
     	# trim top which has task0 wrench requirements
     	seed_a <- activation_per_seed[,task_0_seed_activation]
     	seed_id <- colnames(activation_per_seed)[task_0_seed_activation]
-    	res <- merge_constraints(trim_top_of_constraint(H_multiconstraint,22), assemble_equality_with_seed_point(seed_id, seed_a))
+    	res <- merge_constraints(trim_top_of_constraint(H_multiconstraint,22), assemble_equality_with_seed_point(seed_id, seed_a, H_multiconstraint))
     	attr(res, "seed_activation") <- seed_a
     	attr(res, "seed_id") <- seed_id
     	return(res)
