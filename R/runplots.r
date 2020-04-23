@@ -54,19 +54,24 @@ run_step_speed_distributions_plot <- function(spatiotemporal_evaluations){
  }
 runplots <- function(spatiotemporal_evaluations){
     # boxplots figure
+    library(data.table)
     points <- rbindlist(spatiotemporal_evaluations)
+    points <- data.table(points)
     velocities <- as.numeric(points$velocity_limit)
     sorted_speed_levels <- sort(unique(velocities), decreasing=TRUE)
     # as we decrease the max abs velocity from 1 towards 0, the difficulty increases.
     points$velocity_limit <- factor(velocities, levels=sorted_speed_levels)
     points <- data.table(points)
     library(data.table)
-    summary_stats_p <- ggplot(points[,var(activation),by=.(muscle,task_index,velocity_limit)],aes(task_index,V1,col=velocity_limit,group=velocity_limit)) + geom_path() + facet_grid(~muscle) + theme_classic()
-    ggsave("redirection_figures/variance_per_task_per_vel.pdf",summary_stats_p)
+    variance_p <- ggplot(points[,var(activation),by=.(muscle,task_index,velocity_limit)],
+        aes(task_index,V1,col=velocity_limit,group=velocity_limit)) 
+    variance_p <- variance_p + geom_path(size=1.5) + facet_grid(~factor(muscle, levels=c("FDP" ,"FDS" ,"EIP" ,"EDC" ,"LUM" ,"DI" , "PI"))) + theme_classic()
+    variance_p <- variance_p + xlab("Time") + ylab("Variance of the FAS")
+    ggsave("redirection_figures/variance_per_task_per_vel.pdf",variance_p)
 
 
-    boxplots_plot <- ggplot(points,aes(task_index,activation,col=velocity_limit, group=task_index)) + geom_boxplot() + facet_grid(velocity_limit~muscle) + theme_classic()
-    ggsave("redirection_figures/boxplots_by_vel.pdf", boxplots_plot)
+    boxplots_plot <- ggplot(points,aes(task_index,activation,fill=velocity_limit, group=task_index)) + geom_boxplot(outlier.shape=19,outlier.size=0.2) + facet_grid(velocity_limit~factor(muscle, levels=c("FDP" ,"FDS" ,"EIP" ,"EDC" ,"LUM" ,"DI" , "PI"))) + theme_classic() + xlab("Time") + ylab("Muscle Activation")
+    ggsave("redirection_figures/boxplots_by_vel.pdf", boxplots_plot, width=10)
 
     distributions_per_task_per_muscle_per_st <- ggplot(points,aes(y=activation, col=velocity_limit)) + geom_histogram(bins=50) + facet_grid(velocity_limit~muscle+task_index, scales="free", space="free") + theme_classic()
     ggsave("redirection_figures/distributions_per_task_per_muscle_per_st.pdf", distributions_per_task_per_muscle_per_st)
@@ -74,17 +79,20 @@ runplots <- function(spatiotemporal_evaluations){
 
     diffs <- points[,max(abs(diff(activation))),by=.(muscle_trajectory, muscle,velocity_limit)]
     diffs$velocity_limit <- factor(diffs$velocity_limit,levels=sorted_speed_levels)
-    speed_dists <- ggplot(diffs, aes(V1, col=velocity_limit)) + geom_histogram(bins=100) + facet_grid(velocity_limit~muscle, scales="free_y") + theme_classic()
+    speed_dists <- ggplot(diffs, aes(V1, col=velocity_limit)) + geom_histogram(bins=100) + facet_grid(velocity_limit~factor(muscle, levels=c("FDP" ,"FDS" ,"EIP" ,"EDC" ,"LUM" ,"DI" , "PI")), scales="free_y") + theme_classic()
     ggsave("redirection_figures/speed_distributions_by_vel_const.pdf", speed_dists)
 
     dotdot <- points[,abs(diff(diff(activation))),by=.(muscle_trajectory, muscle,velocity_limit)]
     dotdot$velocity_limit <- factor(dotdot$velocity_limit,levels=sorted_speed_levels)
-    dot_dot_p <- ggplot(dotdot, aes(V1, col=velocity_limit)) + geom_histogram(bins=100) + facet_grid(velocity_limit~muscle, scales="free_y") + theme_classic()
+    dot_dot_p <- ggplot(dotdot, aes(V1, col=velocity_limit)) + geom_histogram(bins=100) + facet_grid(velocity_limit~factor(muscle, levels=c("FDP" ,"FDS" ,"EIP" ,"EDC" ,"LUM" ,"DI" , "PI")), scales="free_y") + theme_classic()
     ggsave("redirection_figures/dot_dot_dist.pdf", dot_dot_p)
 
     summ_stats <- diffs[,.(min=min(V1),median=median(V1),mean=mean(V1),max=max(V1)), by=.(muscle,velocity_limit)]
     setorder(summ_stats,"muscle", "velocity_limit")
     summ_stats$velocity_limit <- factor(summ_stats$velocity_limit,levels=sorted_speed_levels)
-    summary_stats_p <- ggplot(melt(summ_stats, id.vars=c("muscle","velocity_limit")), aes(velocity_limit, value, group=muscle, col=muscle)) + geom_path() + facet_grid(~variable) + theme_classic()
-    ggsave("redirection_figures/per_muscle_changes_in_fas_by_vel_constraint.pdf", summary_stats_p)
+    summary_stats_p <- ggplot(melt(summ_stats, id.vars=c("muscle","velocity_limit")), aes(velocity_limit, value, group=muscle, col=factor(muscle, levels=c("FDP" ,"FDS" ,"EIP" ,"EDC" ,"LUM" ,"DI" , "PI")))) + geom_path() + facet_grid(~variable) + theme_classic()
+    browser()
+    pp2 <- ggplot(diffs,aes(velocity_limit, y=V1,fill=velocity_limit)) + geom_boxplot(outlier.size=0.2) + facet_grid(~factor(muscle, levels=c("FDP" ,"FDS" ,"EIP" ,"EDC" ,"LUM" ,"DI" , "PI"))) + theme_classic()
+    pp2 <- pp2 + ylab("Trajectory speeds recorded")
+    ggsave("redirection_figures/per_muscle_changes_in_fas_by_vel_constraint.pdf", pp2, width=8)
 }
