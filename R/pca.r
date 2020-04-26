@@ -45,7 +45,7 @@ generate_pca_projection_plots <- function(seed_vs_noseed_trajectories_rda_str, s
 
 	p2 <- ggplot(var_exp_per_task, aes(task_index,value, col=PC)) + geom_line(size=2) + geom_point(size=3) + ylab("Variance Explained for PC at a given task index") + theme_classic()
 	message("--Plotting (2/2)")
-	ggsave("figures/pca_loadings_for_nonseed_%s.pdf" %--% suffix %>% time_dot("pdf"), grid.arrange(grobs=list(p1,p2),cols=1))
+	ggsave("outputs/pca_loadings_for_nonseed_%s.pdf" %--% suffix %>% time_dot("pdf"), grid.arrange(grobs=list(p1,p2),cols=1))
 
 	message("-Projecting seed trajectories onto the 7 PC models. Performed for each of 10 seed points")
 	nonseeded_proj_points_per_task <- pbmclapply(0:6, function(i){
@@ -79,8 +79,8 @@ generate_pca_projection_plots <- function(seed_vs_noseed_trajectories_rda_str, s
 	p <- p + theme_classic()
 	p <- p + stat_chull(fill=NA, col="black")
 	p <- p + theme(panel.grid = element_blank(), panel.border = element_blank())
-	ggsave("figures/PC_view_of_st_tunnel_%s"%--% suffix %>%time_dot("pdf"), p)
+	ggsave("outputs/PC_view_of_st_tunnel_%s"%--% suffix %>%time_dot("pdf"), p)
 
-
+	return(nonseed_and_seed_projected)
 	# TODO a .50 task
 }

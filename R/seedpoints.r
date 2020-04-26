@@ -75,7 +75,7 @@ gen_freqpoly_seed_vs_unseeded <- function(seed_vs_noseed_trajectories, seed_id_i
 		return(p)
     }
 
-seed_vs_noseed_diff_speeds<- function(vel,n_seeds = 10){
+seed_vs_noseed_diff_speeds <- function(vel,n_seeds = 10){
 	message('lets begin')
     fixed_velocity_constraint_speed <- vel
     my_H_matrix <- read.csv("data/fvc_hentz_2002.csv", row.names=1) %>% as.matrix
@@ -93,8 +93,8 @@ seed_vs_noseed_diff_speeds<- function(vel,n_seeds = 10){
     	return(res)
     	})
     result_filepaths <- lapply(multiconstraint_per_seed, seed_sample_and_save,
-     target_string = paste0("outputs/seed_evals_medium_speed_%s_id_"%--%vel, "%s.rda"),
-     har_samples_per_seed = 1e4)
+     					target_string = paste0("outputs/seed_speed_%s_id_"%--%vel, "%s.rda"),
+     					har_samples_per_seed = 1e4)
 
 	trajectories_per_seed <- lapply(result_filepaths, readRDS)
 	seed_vs_noseed_trajectories <- combine_unseeded_and_seeded_data_into_id_tall_df(trajectories_unseeded=st_res, trajectories_per_seed=trajectories_per_seed)
@@ -104,5 +104,10 @@ seed_vs_noseed_diff_speeds<- function(vel,n_seeds = 10){
 	ggsave("outputs/seed_vs_noseed_trajectories_speed_%s_"%--%fixed_velocity_constraint_speed%>%time_dot("pdf"),p, width=10,height=10)
     message("DONE WITH SPEED OF %s"%--%vel)
     message(print(Sys.time() - tic))
+
+	projection_str <- generate_pca_projection_plots(seed_vs_noseed_trajectories, suffix="_VEL_%s"%--%vel)
+	saveRDS("outputs/projectionstr_%s.rds"%--%vel,projection_str)
+
+
 	system("rclone copy outputs remote:outputs", wait=TRUE)
     }
