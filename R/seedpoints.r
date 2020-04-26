@@ -75,14 +75,14 @@ gen_freqpoly_seed_vs_unseeded <- function(seed_vs_noseed_trajectories, seed_id_i
 		return(p)
     }
 
-seed_vs_noseed_diff_speeds<- function(vel){
+seed_vs_noseed_diff_speeds<- function(vel,n_seeds = 10){
 	message('lets begin')
     fixed_velocity_constraint_speed <- vel
     my_H_matrix <- read.csv("data/fvc_hentz_2002.csv", row.names=1) %>% as.matrix
     tic <- Sys.time()
     st_res <- st_with_vel(my_H_matrix, fixed_velocity_constraint_speed, har_n=1e5)
     H_multiconstraint <- attr(st_res, "constraints_and_tasks")$nonredundant_constr
-    activation_per_seed <- extract_n_seeds_from_rda_ste(st_res, 10)
+    activation_per_seed <- extract_n_seeds_from_rda_ste(st_res, n_seeds)
     multiconstraint_per_seed <- lapply(seq(1,ncol(activation_per_seed)), function(task_0_seed_activation){
     	# trim top which has task0 wrench requirements
     	seed_a <- activation_per_seed[,task_0_seed_activation]
