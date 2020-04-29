@@ -1,6 +1,14 @@
 figures
 stfeasibility.sublime-workspace
 /A
+
+Rprof.out
+figarchive/
+interactives/
+outputs/
+st2/seed_vs_nonseed_video.mov
+tmp.rds
+
 # History files
 .Rhistory
 .Rapp.history
