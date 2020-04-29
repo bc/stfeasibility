@@ -17,7 +17,6 @@ test_that('we can extract 100 seeds for a given speed multiconstraint #23', {
     	})
 
     result_filepaths <- pbmclapply(multiconstraint_per_seed, seed_sample_and_save, har_samples_per_seed = 1e4, mc.cores=detectCores(all.tests = FALSE, logical = TRUE))
-       
 	seeded_points <- ex%>% har_sample(1000)
 	parcoords(seeded_points, reorderable = TRUE, brushMode = "1D-axes-multi", autoresize=TRUE, width=1900, height=500, alpha=0.1)
     })
@@ -30,7 +29,6 @@ test_that("pca projections for each task-poltope projected", {
 
 
 test_that('we can combine the unseeded and seeded trajectories', {
-
     trajectories <- data.table(readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/ste_1e5_speed_13_timefin_09:04:05.556.rds"))
     velocity_limit_fixed <- trajectories$velocity_limit[1]
 	trajectories_per_seed <- lapply(dir("/Volumes/GoogleDrive/My\ Drive/outputs/seed_evals/", full.names=TRUE), readRDS)
