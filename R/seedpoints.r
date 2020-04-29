@@ -1,12 +1,15 @@
 require(data.table)
+
+# saveRDS(st_res, "tmp.rds")
+# st_res_input <- readRDS("tmp.rds")
+
+# aa <- extract_n_seeds_from_rds_ste(st_res_input,2)
 extract_n_seeds_from_rds_ste <- function(st_res, n_seeds){
 	require(data.table)
-    seeds <- sample(1:max(st_res$muscle_trajectory),n_seeds,replace=FALSE)
+    seeds <- sample(1:max(st_res$muscle_trajectory), n_seeds, replace=FALSE)
     st_res_dt <- data.table(st_res)
     H_multiconstraint <- attr(st_res,"constraints_and_tasks")$nonredundant_constr
-    print(colnames(st_res_dt))
-    browser()
-    only_seeds <- st_res_dt[muscle_trajectory%in%seeds & task_index == 0,activation,by=.(muscle_trajectory, muscle)]    
+    only_seeds <- st_res_dt[task_index == 0 & muscle_trajectory%in%seeds]    
     setorder(only_seeds, "muscle_trajectory")
     only_seeds[,muscle:=factor(only_seeds$muscle, levels = colnames(H_multiconstraint$constr)[1:7])]
     seeds <- data.frame(dcast(only_seeds, muscle~muscle_trajectory, value.var="activation"))
@@ -52,7 +55,7 @@ combine_unseeded_and_seeded_data_into_id_tall_df <- function(trajectories_unseed
 	unseeded_dt[,seed_id := "Not Seeded"]
 	unseeded_dt[,velocity_limit:=NULL]
 
-	seed_based_trajectories <- pblapply(trajectories_per_seed[1:10], function(x){
+	seed_based_trajectories <- pblapply(trajectories_per_seed, function(x){
 		ddf <- trajectory_har_df_melt(x,7) %>% data.table
 		# add a column called seed_id so we can keep track of where these 10k trajectories came from
 		seed_id <- attr(attr(x, "constraint_with_seed"),"seed_id")
@@ -77,7 +80,7 @@ gen_freqpoly_seed_vs_unseeded <- function(seed_vs_noseed_trajectories, seed_id_i
 		return(p)
     }
 
-seed_vs_noseed_diff_speeds <- function(vel,n_seeds = 10){
+seed_vs_noseed_diff_speeds <- function(vel, n_seeds = 10, n_samples_per_seed=1e4){
 	message('lets begin')
     fixed_velocity_constraint_speed <- vel
     my_H_matrix <- read.csv("data/fvc_hentz_2002.csv", row.names=1) %>% as.matrix
@@ -96,11 +99,11 @@ seed_vs_noseed_diff_speeds <- function(vel,n_seeds = 10){
     	})
     result_filepaths <- lapply(multiconstraint_per_seed, seed_sample_and_save,
      					target_string = paste0("outputs/seed_speed_%s_id_"%--%vel, "%s.rda"),
-     					har_samples_per_seed = 1e4)
+     					har_samples_per_seed = n_samples_per_seed)
 
 	trajectories_per_seed <- lapply(result_filepaths, readRDS)
 	seed_vs_noseed_trajectories <- combine_unseeded_and_seeded_data_into_id_tall_df(trajectories_unseeded=st_res, trajectories_per_seed=trajectories_per_seed)
-	saveRDS(seed_vs_noseed_trajectories, "outputs/seed_vs_nospeed_talldf_speed_%s.rda"%--%velocity_limit)
+	saveRDS(seed_vs_noseed_trajectories, "outputs/seed_vs_nospeed_talldf_speed_%s.rda"%--%vel)
     p <- gen_freqpoly_seed_vs_unseeded(seed_vs_noseed_trajectories, 1:3)
     p <- p + ggtitle("Velocity lim: %s"%--%fixed_velocity_constraint_speed)
 	ggsave("outputs/seed_vs_noseed_trajectories_speed_%s_"%--%fixed_velocity_constraint_speed%>%time_dot("pdf"),p, width=10,height=10)
