@@ -1,8 +1,8 @@
 Package: stfeasibility
 Title: The Feasibility Theory of Time-Varying Isometric Force Trajectories
 Version: 0.0.1
-Authors@R: person("Brian", "Cohn", email = "brian.cohn@usc.edu", role = c("aut", "cre"))
-Description: Selects points that work and removes points that don't work.
+Authors@R: person("Brian", "Cohn", email = "bc@alumni.usc.edu", role = c("aut", "cre"))
+Description: Code for subsampling from spatiotemporal feasibility spaces
 Depends: 
 	R (>= 3.5.0),
 	lpSolve,

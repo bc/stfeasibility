@@ -12,6 +12,19 @@ knitr::opts_chunk$set(
   fig.path = "README-"
 )
 ```
+pre-installation
+```r
+install.packages(c("lpSolve",
+"hitandrun",
+"ggpubr",
+"reshape2",
+"plyr",
+"RColorBrewer",
+"plotly",
+"pracma",'xtable','caTools','GGally','plotrix','scatterplot3d','microbenchmark','pbmcapply','pbapply','geometry','rgl'))
+load_all()
+```
+
 
 # stfeasibility
 
