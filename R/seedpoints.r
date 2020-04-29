@@ -12,7 +12,8 @@ extract_n_seeds_from_rds_ste <- function(st_res, n_seeds){
     H_multiconstraint <- attr(st_res,"constraints_and_tasks")$nonredundant_constr
     only_seeds <- st_res_dt[st_res_dt$task_index == 0 & st_res_dt$muscle_trajectory%in%seeds,]    
     setorder(only_seeds, "muscle_trajectory")
-    only_seeds[,muscle:=factor(only_seeds$muscle, levels = colnames(H_multiconstraint$constr)[1:7])]
+    muscle_levels <- factor(only_seeds[,muscle], levels = colnames(H_multiconstraint$constr)[1:7])
+    only_seeds[,muscle:=muscle_levels]
     seeds <- data.frame(dcast(only_seeds, muscle~muscle_trajectory, value.var="activation"))
     activation_per_seed <- seeds[,-1]
 	rownames(activation_per_seed) <- seeds[,1]

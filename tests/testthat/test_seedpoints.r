@@ -43,7 +43,7 @@ test_that("seed vs noseed from scratch", {
     #speed is fixed across this entire run below; is dependent on the rds used
     speeds <- sample(seq(0.05,1,length.out=4))
     pblapply(speeds,seed_vs_noseed_diff_speeds,2,1e3)
-	x})
+	})
 test_that('effect of a seed on downstream polytope projections onto each muscle', {
 	seed_vs_noseed_trajectories <- readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/seed_vs_noseed_trajectories_at_speedlimit_0.126767676767677.rds")
     velocity_limit_fixed <- attr(seed_vs_noseed_trajectories,"velocity_limit")
