@@ -4,6 +4,8 @@ extract_n_seeds_from_rds_ste <- function(st_res, n_seeds){
     seeds <- sample(1:max(st_res$muscle_trajectory),n_seeds,replace=FALSE)
     st_res_dt <- data.table(st_res)
     H_multiconstraint <- attr(st_res,"constraints_and_tasks")$nonredundant_constr
+    print(colnames(st_res_dt))
+    browser()
     only_seeds <- st_res_dt[muscle_trajectory%in%seeds & task_index == 0,activation,by=.(muscle_trajectory, muscle)]    
     setorder(only_seeds, "muscle_trajectory")
     only_seeds[,muscle:=factor(only_seeds$muscle, levels = colnames(H_multiconstraint$constr)[1:7])]

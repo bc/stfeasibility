@@ -16,7 +16,6 @@ test_that('we can extract 100 seeds for a given speed multiconstraint #23', {
     	return(res)
     	})
 
-
     result_filepaths <- pbmclapply(multiconstraint_per_seed, seed_sample_and_save, har_samples_per_seed = 1e4, mc.cores=detectCores(all.tests = FALSE, logical = TRUE))
        
 	seeded_points <- ex%>% har_sample(1000)
@@ -34,7 +33,6 @@ test_that('we can combine the unseeded and seeded trajectories', {
 
     trajectories <- data.table(readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/ste_1e5_speed_13_timefin_09:04:05.556.rds"))
     velocity_limit_fixed <- trajectories$velocity_limit[1]
-    
 	trajectories_per_seed <- lapply(dir("/Volumes/GoogleDrive/My\ Drive/outputs/seed_evals/", full.names=TRUE), readRDS)
 	seed_vs_noseed_trajectories <- combine_unseeded_and_seeded_data_into_id_tall_df(trajectories_unseeded=trajectories, trajectories_per_seed=trajectories_per_seed)
 	saveRDS(seed_vs_noseed_trajectories, sprintf("/Volumes/GoogleDrive/My\ Drive/outputs/seed_vs_noseed_trajectories_at_speedlimit_%s.rds",velocity_limit_fixed))
