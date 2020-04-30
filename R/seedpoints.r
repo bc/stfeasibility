@@ -87,6 +87,8 @@ seed_vs_noseed_diff_speeds <- function(vel, n_seeds = 10, n_samples_per_unseeded
     fixed_velocity_constraint_speed <- vel
     my_H_matrix <- read.csv("data/fvc_hentz_2002.csv", row.names=1) %>% as.matrix
     tic <- Sys.time()
+    target_out_string_projection <- sprintf("outputs/projectionstr_vel_%s.rds",as.character(vel))
+    message("working on: %s"%--%target_out_string_projection)
     st_res <- st_with_vel(my_H_matrix, fixed_velocity_constraint_speed, har_n=n_samples_per_unseeded)
     H_multiconstraint <- attr(st_res, "constraints_and_tasks")$nonredundant_constr
     activation_per_seed <- extract_n_seeds_from_rds_ste(st_res, n_seeds)
@@ -113,6 +115,6 @@ seed_vs_noseed_diff_speeds <- function(vel, n_seeds = 10, n_samples_per_unseeded
     message(print(Sys.time() - tic))
 
 	projection_str <- generate_pca_projection_plots(seed_vs_noseed_trajectories, suffix="_VEL_%s"%--%vel)
-	saveRDS(sprintf("outputs/projectionstr_vel_%s.rds",as.character(vel)), projection_str)
+	saveRDS(target_out_string_projection, projection_str)
 	system("rclone copy outputs remote:outputs", wait=TRUE)
     }
