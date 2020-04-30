@@ -38,8 +38,8 @@ test_that('we can combine the unseeded and seeded trajectories', {
 
 test_that("seed vs noseed from scratch", {
 	library(data.table)
-    speeds <- sample(seq(0.05,1,length.out=4))
-    pblapply(speeds,seed_vs_noseed_diff_speeds,10,1e5)
+    speeds <- sample(seq(0.05,1,length.out=100))
+    pbmclapply(speeds,seed_vs_noseed_diff_speeds,10,1e5,1e4,mc.cores=4)
 	})
 test_that('effect of a seed on downstream polytope projections onto each muscle', {
 	seed_vs_noseed_trajectories <- readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/seed_vs_noseed_trajectories_at_speedlimit_0.126767676767677.rds")

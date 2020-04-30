@@ -14,7 +14,19 @@ Depends:
 	reshape2,
 	plyr,
 	RColorBrewer,
-	plotly
+	plotly,
+	lpSolve
+	pracma,
+	xtable,
+	caTools,
+	GGally,
+	plotrix,
+	scatterplot3d,
+	microbenchmark,
+	pbmcapply,
+	pbapply,
+	geometry,
+	rgl
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
