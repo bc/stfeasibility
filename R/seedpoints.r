@@ -113,6 +113,6 @@ seed_vs_noseed_diff_speeds <- function(vel, n_seeds = 10, n_samples_per_unseeded
     message(print(Sys.time() - tic))
 
 	projection_str <- generate_pca_projection_plots(seed_vs_noseed_trajectories, suffix="_VEL_%s"%--%vel)
-	saveRDS("outputs/projectionstr_vel__nseeds_%s,har_per_seed_%s%s.rds"%--%c(n_seedsvel),projection_str)
+	saveRDS("outputs/projectionstr_vel__%s.rds"%--%vel,projection_str)
 	system("rclone copy outputs remote:outputs", wait=TRUE)
     }

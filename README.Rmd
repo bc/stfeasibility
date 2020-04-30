@@ -14,6 +14,7 @@ knitr::opts_chunk$set(
 ```
 pre-installation
 ```r
+install(dependencies=TRUE) # this should get them all
 install.packages(c("lpSolve",
 "hitandrun",
 "ggpubr",
