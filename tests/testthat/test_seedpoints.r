@@ -17,6 +17,7 @@ test_that('we can extract 100 seeds for a given speed multiconstraint #23', {
     	})
 
     result_filepaths <- pbmclapply(multiconstraint_per_seed, seed_sample_and_save, har_samples_per_seed = 1e4, mc.cores=detectCores(all.tests = FALSE, logical = TRUE))
+
 	seeded_points <- ex%>% har_sample(1000)
 	parcoords(seeded_points, reorderable = TRUE, brushMode = "1D-axes-multi", autoresize=TRUE, width=1900, height=500, alpha=0.1)
     })
@@ -24,9 +25,8 @@ test_that('we can extract 100 seeds for a given speed multiconstraint #23', {
 
 test_that("pca projections for each task-poltope projected", {
 	seed_vs_noseed_trajectories <- readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/seed_vs_noseed_trajectories_at_speedlimit_0.126767676767677.rds")
-	generate_pca_projection_plots(seed_vs_noseed_trajectories, "speedlimit_pt1267")
+	generate_pca_projection_plots(seed_vs_noseed_trajectories, "speedlimit_pt1267_new")
 	})
-
 
 test_that('we can combine the unseeded and seeded trajectories', {
     trajectories <- data.table(readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/ste_1e5_speed_13_timefin_09:04:05.556.rds"))
@@ -38,9 +38,8 @@ test_that('we can combine the unseeded and seeded trajectories', {
 
 test_that("seed vs noseed from scratch", {
 	library(data.table)
-    #speed is fixed across this entire run below; is dependent on the rds used
     speeds <- sample(seq(0.05,1,length.out=4))
-    pblapply(speeds,seed_vs_noseed_diff_speeds,2,1e3)
+    pblapply(speeds,seed_vs_noseed_diff_speeds,10,1e5)
 	})
 test_that('effect of a seed on downstream polytope projections onto each muscle', {
 	seed_vs_noseed_trajectories <- readRDS("/Volumes/GoogleDrive/My\ Drive/outputs/seed_vs_noseed_trajectories_at_speedlimit_0.126767676767677.rds")
