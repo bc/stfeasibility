@@ -21,7 +21,7 @@ extract_n_seeds_from_rds_ste <- function(st_res, n_seeds){
 }
 
 #puts a diag and -diag equality with the activations in task_0 for the input activations7
-assemble_equality_with_seed_point <- function(seed_id, activations7,H_multiconstraint){
+assemble_equality_with_seed_point <- function(seed_id, activations7, H_multiconstraint){
 	library(data.table)
 	equalityconst <- cbind(diag(7), matrix(0,7,42))
 	rownames(equalityconst) <- rep(paste0(seed_id,"_task0_equality_w_seed_const"), nrow(equalityconst))
@@ -31,6 +31,21 @@ assemble_equality_with_seed_point <- function(seed_id, activations7,H_multiconst
 	equalit_constr_formatted <- create_equality_constraint(equalityconst, activations7)
 	return(list(constr = equalit_constr_formatted$constr[1:7,], dir= rep("=",7),rhs = equalit_constr_formatted$rhs[1:7]))
 }
+
+#puts a diag and -diag equality with the activations in task_0 for the input activations7
+assemble_dual_equality_with_seed_point <- function(seed_id, activations7, H_multiconstraint){
+	library(data.table)
+	browser()
+	equalityconst <- cbind(diag(7), matrix(0,7,42))
+	rownames(equalityconst) <- rep(paste0(seed_id,"_task0_equality_w_seed_const"), nrow(equalityconst))
+	print('names are')
+	print(equalityconst)
+	colnames(equalityconst) <- colnames(H_multiconstraint$const)
+	equalit_constr_formatted <- create_equality_constraint(equalityconst, activations7)
+	return(list(constr = equalit_constr_formatted$constr[1:7,], dir= rep("=",7),rhs = equalit_constr_formatted$rhs[1:7]))
+
+}
+
 
 trim_top_of_constraint <- function(constraint, nrows_to_rm){
 	newversion <- constraint # mk copy
@@ -81,8 +96,8 @@ gen_freqpoly_seed_vs_unseeded <- function(seed_vs_noseed_trajectories, seed_id_i
 		p <- p + theme_classic() + ylab("Within-bin Volume wrt to mode") + xlab("Muscle activation (0 to 1 is 0 to 100%)")
 		return(p)
     }
-
-seed_vs_noseed_diff_speeds <- function(vel, n_seeds = 10, n_samples_per_unseeded=1e5, n_samples_per_seed=1e4){
+## seed_constraint_type if start, constrain just the first moment, else make it start_and_end to do both 
+seed_vs_noseed_diff_speeds <- function(vel, n_seeds = 10, n_samples_per_unseeded=1e5, n_samples_per_seed=1e4, seed_constraint_type="start"){
 	message('lets begin')
     fixed_velocity_constraint_speed <- vel
     my_H_matrix <- read.csv("data/fvc_hentz_2002.csv", row.names=1) %>% as.matrix
@@ -96,7 +111,12 @@ seed_vs_noseed_diff_speeds <- function(vel, n_seeds = 10, n_samples_per_unseeded
     	# trim top which has task0 wrench requirements
     	seed_a <- activation_per_seed[,task_0_seed_activation]
     	seed_id <- colnames(activation_per_seed)[task_0_seed_activation]
-    	res <- merge_constraints(trim_top_of_constraint(H_multiconstraint,22), assemble_equality_with_seed_point(seed_id, seed_a, H_multiconstraint))
+    	if (seed_constraint_type == "start"){
+	    	res <- merge_constraints(trim_top_of_constraint(H_multiconstraint,22), assemble_equality_with_seed_point(seed_id, seed_a, H_multiconstraint))
+    	} else{
+    		# (seed_constraint_type == "start_and_end")
+	    	res <- merge_constraints(trim_top_of_constraint(H_multiconstraint,22), assemble_dual_equality_with_seed_point(seed_id, seed_a, H_multiconstraint))
+    	}
     	attr(res, "seed_activation") <- seed_a
     	attr(res, "seed_id") <- seed_id
     	return(res)
