@@ -123,7 +123,6 @@ seed_vs_noseed_diff_speeds <- function(vel, n_seeds = 10, n_samples_per_unseeded
 			bbb <- temp_res$dir[to_keep]
 			ccc <- temp_res$rhs[to_keep]
 			# recompose into a constraint structure
-			browser()
 			res <- list(constr = aaa, dir = bbb, rhs = ccc)
     	}
     	attr(res, "seed_activation") <- seed_a
