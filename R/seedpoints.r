@@ -35,17 +35,17 @@ assemble_equality_with_seed_point <- function(seed_id, activations7, H_multicons
 #puts a diag and -diag equality with the activations in task_0 for the input activations7
 assemble_dual_equality_with_seed_point <- function(seed_id, activations7, H_multiconstraint){
 	library(data.table)
-	browser()
-	equalityconst <- cbind(diag(7), matrix(0,7,42))
-	rownames(equalityconst) <- rep(paste0(seed_id,"_task0_equality_w_seed_const"), nrow(equalityconst))
+	equalityconst_first <- cbind(diag(7), matrix(0,7,42))
+	equalityconst_last <- cbind( matrix(0,7,42), diag(7))
+	equality_const <- rbind(equalityconst_first,equalityconst_last)
+	rownames(equality_const) <- rep(paste0(seed_id,"_task0_6_equality_w_dual_seed_const"), nrow(equality_const))
 	print('names are')
-	print(equalityconst)
-	colnames(equalityconst) <- colnames(H_multiconstraint$const)
-	equalit_constr_formatted <- create_equality_constraint(equalityconst, activations7)
-	return(list(constr = equalit_constr_formatted$constr[1:7,], dir= rep("=",7),rhs = equalit_constr_formatted$rhs[1:7]))
-
+	print(equality_const)
+	colnames(equality_const) <- colnames(H_multiconstraint$const)
+	equalit_constr_formatted <- create_equality_constraint(equality_const, activations7)
+	newDualConst <- list(constr = equality_const%>%as.matrix, dir= rep("=",14),rhs = c(activations7,activations7))
+	return(newDualConst)
 }
-
 
 trim_top_of_constraint <- function(constraint, nrows_to_rm){
 	newversion <- constraint # mk copy
@@ -115,7 +115,16 @@ seed_vs_noseed_diff_speeds <- function(vel, n_seeds = 10, n_samples_per_unseeded
 	    	res <- merge_constraints(trim_top_of_constraint(H_multiconstraint,22), assemble_equality_with_seed_point(seed_id, seed_a, H_multiconstraint))
     	} else{
     		# (seed_constraint_type == "start_and_end")
-	    	res <- merge_constraints(trim_top_of_constraint(H_multiconstraint,22), assemble_dual_equality_with_seed_point(seed_id, seed_a, H_multiconstraint))
+	    	temp_res <- merge_constraints(trim_top_of_constraint(H_multiconstraint,22), assemble_dual_equality_with_seed_point(seed_id, seed_a, H_multiconstraint))
+	    	rownames(temp_res$const)
+	     	# Remove the constraints for the last task (task 6)
+			to_keep <- which(!endsWith(rownames(temp_res$const),"_6"))
+			aaa <- temp_res$const[to_keep,]
+			bbb <- temp_res$dir[to_keep]
+			ccc <- temp_res$rhs[to_keep]
+			# recompose into a constraint structure
+			browser()
+			res <- list(constr = aaa, dir = bbb, rhs = ccc)
     	}
     	attr(res, "seed_activation") <- seed_a
     	attr(res, "seed_id") <- seed_id
