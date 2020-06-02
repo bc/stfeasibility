@@ -5,7 +5,6 @@ create_equality_constraint <- function(A_mat, b_vec) {
     return(constr)
 }
 
-
 constraint_H_with_bounds <- function(A, b, bounds_tuple_of_numeric, num_muscles=NULL) {
     H_constraint <- create_equality_constraint(A, b)
     bounds <- bound_constraints_for_all_muscles(bounds_tuple_of_numeric, muscle_names=colnames(A))

@@ -131,7 +131,7 @@ seed_vs_noseed_diff_speeds <- function(vel, n_seeds = 10, n_samples_per_unseeded
     	return(res)
     	})
     result_filepaths <- lapply(multiconstraint_per_seed, seed_sample_and_save,
-     					target_string = paste0("outputs/seed_speed_%s_id_"%--%vel, "%s.rda"),
+     					target_string = paste0("dual_seeded_outputs/seed_speed_%s_id_"%--%vel, "%s.rda"),
      					har_samples_per_seed = n_samples_per_seed)
 
 	trajectories_per_seed <- lapply(result_filepaths, readRDS)

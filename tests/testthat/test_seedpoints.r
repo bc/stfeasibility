@@ -44,8 +44,8 @@ test_that("seed vs noseed from scratch", {
 
 test_that("seed vs noseed from scratch", {
 	library(data.table)
-    speeds <- sample(seq(0.05,1,length.out=2))
-    pblapply(speeds, seed_vs_noseed_diff_speeds, 10, 1e3, 1e3, seed_constraint_type="start_and_end")
+    speeds <- sample(seq(0.05,1,length.out=100))
+    pblapply(speeds, seed_vs_noseed_diff_speeds, 10, 1e5, 1e4, seed_constraint_type="start_and_end")
 	})
 
 test_that('effect of a seed on downstream polytope projections onto each muscle', {
