@@ -107,13 +107,14 @@ seed_vs_noseed_diff_speeds <- function(vel, n_seeds = 10, n_samples_per_unseeded
     st_res <- st_with_vel(my_H_matrix, fixed_velocity_constraint_speed, har_n=n_samples_per_unseeded)
     H_multiconstraint <- attr(st_res, "constraints_and_tasks")$nonredundant_constr
     activation_per_seed <- extract_n_seeds_from_rds_ste(st_res, n_seeds)
+
     multiconstraint_per_seed <- lapply(seq(1,ncol(activation_per_seed)), function(task_0_seed_activation){
     	# trim top which has task0 wrench requirements
     	seed_a <- activation_per_seed[,task_0_seed_activation]
     	seed_id <- colnames(activation_per_seed)[task_0_seed_activation]
     	if (seed_constraint_type == "start"){
 	    	res <- merge_constraints(trim_top_of_constraint(H_multiconstraint,22), assemble_equality_with_seed_point(seed_id, seed_a, H_multiconstraint))
-    	} else{
+    	} else {
     		# (seed_constraint_type == "start_and_end")
 	    	temp_res <- merge_constraints(trim_top_of_constraint(H_multiconstraint,22), assemble_dual_equality_with_seed_point(seed_id, seed_a, H_multiconstraint))
 	    	rownames(temp_res$const)
@@ -132,7 +133,7 @@ seed_vs_noseed_diff_speeds <- function(vel, n_seeds = 10, n_samples_per_unseeded
     result_filepaths <- lapply(multiconstraint_per_seed, seed_sample_and_save,
      					target_string = paste0("dual_seeded_outputs/seed_speed_%s_id_"%--%vel, "%s.rda"),
      					har_samples_per_seed = n_samples_per_seed)
-
+    result_filepaths <- dir('/Users/Olive/Documents/GitHub/bc/stfeasibility/dual_seeded_outputs',full.names=TRUE)
 	trajectories_per_seed <- lapply(result_filepaths, readRDS)
 	seed_vs_noseed_trajectories <- combine_unseeded_and_seeded_data_into_id_tall_df(trajectories_unseeded=st_res, trajectories_per_seed=trajectories_per_seed)
 	saveRDS(seed_vs_noseed_trajectories, "outputs/seed_vs_nospeed_talldf_speed_%s.rda"%--%vel)

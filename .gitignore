@@ -50,3 +50,5 @@ vignettes/*.pdf
 # Shiny token, see https://shiny.rstudio.com/articles/shinyapps.html
 rsconnect/
 packrat/lib*/
+dual_seeded_outputs
+dual_seeded_outputs_100

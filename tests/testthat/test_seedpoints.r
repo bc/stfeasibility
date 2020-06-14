@@ -45,6 +45,7 @@ test_that("seed vs noseed from scratch", {
 test_that("seed vs noseed from scratch", {
 	library(data.table)
     speeds <- sample(seq(0.05,1,length.out=100))
+    speeds <- c(0.05,0.1,0.25,0.5,0.75,1)
     pblapply(speeds, seed_vs_noseed_diff_speeds, 10, 1e5, 1e4, seed_constraint_type="start_and_end")
 	})
 
@@ -57,7 +58,7 @@ test_that('effect of a seed on downstream polytope projections onto each muscle'
 	ggsave("seed_vs_noseed_trajectories"%>%time_dot("pdf"),p, width=20,height=20)
 	htmlwidgets::saveWidget(ggplotly(p), "index.html")
 
-	# just show 3
+	# Just show 3
 	p <- ggplot(seed_vs_noseed_trajectories,aes(activation))
 	seed_id_interesting <- unique(seed_vs_noseed_trajectories$seed_id)[1:3]
 	noseed_selection <- seed_vs_noseed_trajectories[seed_id%in%seed_id_interesting & seed_id!="Not Seeded"]
