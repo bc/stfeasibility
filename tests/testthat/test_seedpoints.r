@@ -42,7 +42,7 @@ test_that("seed vs noseed from scratch", {
     pblapply(speeds,seed_vs_noseed_diff_speeds,10,1e5,1e4, seed_constraint_type="start")
 	})
 
-test_that("seed vs noseed from scratch", {
+test_that("seed vs noseed from scratch with dual seeds, start & finish", {
 	library(data.table)
     speeds <- sample(seq(0.05,1,length.out=100))
     speeds <- c(0.05,0.1,0.25,0.5,0.75,1)
